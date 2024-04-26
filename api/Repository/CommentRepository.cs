@@ -51,12 +51,12 @@ namespace api.Repository
             {
                 comments = comments.OrderByDescending(c => c.CreatedOn);
             }
-            return await comments.ToListAsync();
+            return await comments.Include(a => a.AppUser).ToListAsync();
         }
 
         public async Task<Comment?> GetByIdAsync(int id)
         {
-            return await _context.Comments.FirstOrDefaultAsync(c => c.Id == id);
+            return await _context.Comments.Include(a => a.AppUser).FirstOrDefaultAsync(c => c.Id == id);
         }
 
         public async Task<Comment?> UpdateAsync(int id, Comment commentModel)
