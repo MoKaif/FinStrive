@@ -1,4 +1,4 @@
-# 📊 FinStrive 
+# 📊 FinStrive (Old)
 
 Welcome to the **FinStrive**! This web application is designed to help you quickly and efficiently find relevant financial data. Built with modern technologies, the frontend leverages **React** and **TypeScript**, while the backend is powered by a robust **.NET API**. Whether you're a financial analyst, a developer, or just someone in need of reliable financial data, this tool is here to make your life easier.
 
