@@ -1,0 +1,2 @@
+# FinStrive Backend Application
+
