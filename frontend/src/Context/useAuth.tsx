@@ -26,8 +26,12 @@ export const UserProvider = ({ children }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    const user = localStorage.getItem("user");
-    const token = localStorage.getItem("token");
+    let user;
+    let token;
+    if (typeof window !== "undefined") {
+      user = localStorage.getItem("user");
+      token = localStorage.getItem("token");
+    }
     if (user && token) {
       setUser(JSON.parse(user));
       setToken(token);
