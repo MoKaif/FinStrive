@@ -67,6 +67,10 @@ namespace api.Migrations.FinanceDb
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Source", "SourceRef")
+                        .IsUnique()
+                        .HasFilter("\"Source\" = 'pdf' AND \"SourceRef\" IS NOT NULL");
+
                     b.ToTable("Transactions", (string)null);
                 });
 #pragma warning restore 612, 618

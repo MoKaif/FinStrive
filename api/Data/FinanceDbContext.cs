@@ -23,7 +23,11 @@ namespace api.Data
                 entity.Property(e => e.DescriptionRaw).IsRequired();
                 entity.Property(e => e.Amount).HasColumnType("numeric(18,2)").IsRequired();
                 entity.Property(e => e.Source).IsRequired();
-                // Add explicit configurations if needed, but conventions should suffice for now
+
+                // Add unique index on SourceRef for PDF transactions to prevent duplicates
+                entity.HasIndex(e => new { e.Source, e.SourceRef })
+                    .IsUnique()
+                    .HasFilter("\"Source\" = 'pdf' AND \"SourceRef\" IS NOT NULL");
             });
         }
     }

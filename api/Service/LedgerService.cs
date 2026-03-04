@@ -21,17 +21,19 @@ namespace api.Service
 
         public async Task<int> ImportLedgerFileAsync(string filePath)
         {
-            Console.WriteLine($"ImportLedgerFileAsync called for {filePath}");
+            Console.WriteLine($"[LEDGER] Starting import from {filePath}");
             if (!File.Exists(filePath))
             {
                 throw new FileNotFoundException($"Ledger file not found at {filePath}");
             }
 
             var lines = await File.ReadAllLinesAsync(filePath);
+            Console.WriteLine($"[LEDGER] Read {lines.Length} lines from file");
             int importedCount = 0;
+            int skippedCount = 0;
 
-            // Regex for Header: YYYY-MM-DD (flag) Description
-            var headerRegex = new Regex(@"^(\d{4}-\d{2}-\d{2})(?:\s+[*!])?\s+(.+)$");
+            // Regex for Header: YYYY-MM-DD or YYYY/MM/DD (flag) Description
+            var headerRegex = new Regex(@"^(\d{4}[-/]\d{2}[-/]\d{2})(?:\s+[*!])?\s+(.+)$");
             // Regex for Posting: (indent) Account (spaces) Amount?
             var postingRegex = new Regex(@"^\s+([\w:]+)(?:\s+(.*))?$");
 
@@ -49,12 +51,16 @@ namespace api.Service
                     // If we have a previous transaction accumulating, process it now
                     if (currentTxn != null)
                     {
-                        await ProcessTransactionAsync(currentTxn);
-                        importedCount++;
+                        var result = await ProcessTransactionAsync(currentTxn);
+                        if (result)
+                            importedCount++;
+                        else
+                            skippedCount++;
                     }
 
                     // Start new transaction
-                    var dt = DateTime.Parse(headerMatch.Groups[1].Value);
+                    var dateStr = headerMatch.Groups[1].Value.Replace('/', '-'); // Normalize to YYYY-MM-DD
+                    var dt = DateTime.Parse(dateStr);
                     dt = DateTime.SpecifyKind(dt, DateTimeKind.Utc);
                     var desc = headerMatch.Groups[2].Value.Trim();
 
@@ -97,20 +103,23 @@ namespace api.Service
             // Process final transaction
             if (currentTxn != null)
             {
-                await ProcessTransactionAsync(currentTxn);
-                importedCount++;
+                var result = await ProcessTransactionAsync(currentTxn);
+                if (result)
+                    importedCount++;
+                else
+                    skippedCount++;
             }
-            
-            Console.WriteLine($"Import complete. Count: {importedCount}");
+
+            Console.WriteLine($"[LEDGER] Import complete. Imported: {importedCount}, Skipped: {skippedCount}");
             return importedCount;
         }
 
-        private async Task ProcessTransactionAsync(LedgerTransaction txn)
+        private async Task<bool> ProcessTransactionAsync(LedgerTransaction txn)
         {
             if (txn.Postings.Count < 2)
             {
-                Console.WriteLine($"Skipping txn {txn.Description}: Less than 2 postings.");
-                return;
+                Console.WriteLine($"[SKIP] {txn.Date:yyyy-MM-dd} {txn.Description}: Only {txn.Postings.Count} posting(s)");
+                return false;
             }
 
             // 1. Balance Calculation (Handle implicit amounts)
@@ -125,8 +134,8 @@ namespace api.Service
             }
             else if (nullAmountPostings.Count > 1)
             {
-                Console.WriteLine($"Skipping txn {txn.Description}: Multiple implicit amounts.");
-                return;
+                Console.WriteLine($"[SKIP] {txn.Date:yyyy-MM-dd} {txn.Description}: Multiple implicit amounts");
+                return false;
             }
             // If No nulls, sum should be 0. If not, ledger is invalid, but we'll proceed processing knowns.
 
@@ -136,15 +145,15 @@ namespace api.Service
             // For this MVP, we will try to create ONE Transaction entity representing the main flow.
             // Or if multiple flows, maybe multiple lines?
             // "The user wants to fix update account from and to... logic to derive expense category from Account string"
-            
+
             // Let's assume the classic case: 1 Positive, 1 Negative.
             var from = txn.Postings.FirstOrDefault(p => p.Amount < 0);
             var to = txn.Postings.FirstOrDefault(p => p.Amount > 0);
 
             if (from == null || to == null)
             {
-                // Weird transaction (zero amount? or only one side?)
-                return;
+                Console.WriteLine($"[SKIP] {txn.Date:yyyy-MM-dd} {txn.Description}: No valid from/to (from={from?.Account}, to={to?.Account})");
+                return false;
             }
 
             // 3. Create Entity
@@ -166,7 +175,7 @@ namespace api.Service
             // Usually we care about the Expense or Income category.
             // If 'To' is Expenses:Food, Category = Food.
             // If 'From' is Income:Salary, Category = Salary.
-            
+
             string relevantAccount = "";
             if (to.Account.StartsWith("Expenses", StringComparison.OrdinalIgnoreCase))
             {
@@ -179,7 +188,7 @@ namespace api.Service
             else
             {
                 // Transfer? Use the 'To' account concept?
-                relevantAccount = to.Account; 
+                relevantAccount = to.Account;
             }
 
             // Extract the leaf node of the account string
@@ -190,7 +199,17 @@ namespace api.Service
                 transaction.Category = parts.Last();
             }
 
-            await _transactionRepository.CreateAsync(transaction);
+            try
+            {
+                await _transactionRepository.CreateAsync(transaction);
+                Console.WriteLine($"[SAVED] {txn.Date:yyyy-MM-dd} {txn.Description} | {transaction.Amount} | {from.Account} -> {to.Account}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] {txn.Date:yyyy-MM-dd} {txn.Description}: {ex.Message}");
+                return false;
+            }
         }
 
         private class LedgerTransaction

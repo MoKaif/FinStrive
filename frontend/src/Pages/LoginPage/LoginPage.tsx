@@ -28,79 +28,75 @@ const LoginPage = (props: Props) => {
     loginUser(form.userName, form.password);
   };
   return (
-    <section className="bg-gray-50 dark:bg-gray-900">
-      <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
-        <div className="w-full bg-white rounded-lg shadow dark:border md:mb-20 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
-          <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
-            <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
-              Sign in to your account
-            </h1>
-            <form
-              className="space-y-4 md:space-y-6"
-              onSubmit={handleSubmit(handleLogin)}
-            >
+    <section className="min-h-screen flex items-center justify-center bg-background-dark relative overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
+        <div className="absolute -top-1/2 -left-1/4 w-[1000px] h-[1000px] bg-primary/20 rounded-full blur-[120px] animate-pulse-slow"></div>
+        <div className="absolute -bottom-1/2 -right-1/4 w-[800px] h-[800px] bg-secondary/10 rounded-full blur-[100px] animate-pulse-slow" style={{ animationDelay: '1.5s' }}></div>
+      </div>
+
+      <div className="container mx-auto px-4 z-10 grid lg:grid-cols-2 gap-12 items-center h-full">
+        {/* Left Side - Illustration/Text */}
+        <div className="hidden lg:flex flex-col justify-center space-y-8 animate-slide-up">
+          <h1 className="text-6xl font-bold font-display text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">
+            Master Your Finances.
+          </h1>
+          <p className="text-xl text-slate-400 max-w-lg leading-relaxed">
+            Take control of your wealth with FinStrive's advanced transaction tracking and portfolio management tools.
+          </p>
+          <div className="flex space-x-4">
+            <div className="p-4 bg-white/5 rounded-2xl backdrop-blur-sm border border-white/10">
+              <div className="text-3xl font-bold text-primary mb-1">100%</div>
+              <div className="text-sm text-slate-400">Secure Data</div>
+            </div>
+            <div className="p-4 bg-white/5 rounded-2xl backdrop-blur-sm border border-white/10">
+              <div className="text-3xl font-bold text-secondary mb-1">24/7</div>
+              <div className="text-sm text-slate-400">Real-time Sync</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side - Login Form */}
+        <div className="w-full max-w-md mx-auto animate-fade-in">
+          <div className="glass-card p-8 md:p-10 relative">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-accent rounded-t-xl"></div>
+
+            <h2 className="text-3xl font-bold text-white mb-2 text-center">Welcome Back</h2>
+            <p className="text-slate-400 text-center mb-8">Sign in to continue your journey</p>
+
+            <form className="space-y-6" onSubmit={handleSubmit(handleLogin)}>
               <div>
-                <label
-                  htmlFor="email"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Username
-                </label>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Username</label>
                 <input
                   type="text"
-                  id="username"
-                  className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  placeholder="Username"
+                  className="input-field"
+                  placeholder="Enter your username"
                   {...register("userName")}
                 />
-                {errors.userName ? (
-                  <p className="text-white">{errors.userName.message}</p>
-                ) : (
-                  ""
-                )}
+                {errors.userName && <p className="text-accent text-sm mt-1">{errors.userName.message}</p>}
               </div>
+
               <div>
-                <label
-                  htmlFor="password"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Password
-                </label>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium text-slate-300">Password</label>
+                  <a href="#" className="text-xs text-primary-light hover:text-white transition-colors">Forgot password?</a>
+                </div>
                 <input
                   type="password"
-                  id="password"
+                  className="input-field"
                   placeholder="••••••••"
-                  className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                   {...register("password")}
                 />
-                {errors.password ? (
-                  <p className="text-white">{errors.password.message}</p>
-                ) : (
-                  ""
-                )}
+                {errors.password && <p className="text-accent text-sm mt-1">{errors.password.message}</p>}
               </div>
-              <div className="flex items-center justify-between">
-                <a
-                  href="#"
-                  className="text-sm text-white font-medium text-primary-600 hover:underline dark:text-primary-500"
-                >
-                  Forgot password?
-                </a>
-              </div>
-              <button
-                type="submit"
-                className="w-full text-white bg-lightGreen hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800"
-              >
-                Sign in
+
+              <button type="submit" className="w-full btn-primary py-3 text-lg shadow-xl shadow-primary/20">
+                Sign In
               </button>
-              <p className="text-sm font-light text-gray-500 dark:text-gray-400">
-                Don’t have an account yet?{" "}
-                <a
-                  href="#"
-                  className="font-medium text-primary-600 hover:underline dark:text-primary-500"
-                >
-                  Sign up
-                </a>
+
+              <p className="text-center text-slate-400 text-sm mt-6">
+                Don't have an account?{" "}
+                <a href="#" className="text-primary-light font-medium hover:text-white transition-colors">Sign up now</a>
               </p>
             </form>
           </div>

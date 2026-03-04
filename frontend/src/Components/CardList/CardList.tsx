@@ -3,6 +3,8 @@ import Card from "../Card/Card";
 import { CompanySearch } from "../../company";
 import { v4 as uuidv4 } from "uuid";
 
+// Workaround for missing types if @types/uuid fails
+
 interface Props {
   searchResults: CompanySearch[];
   onPortfolioCreate: (e: SyntheticEvent) => void;

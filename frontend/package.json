@@ -13,6 +13,7 @@
     "@types/react-dom": "^18.2.7",
     "axios": "^1.4.0",
     "dotenv": "^16.3.1",
+    "framer-motion": "^12.25.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.51.3",
@@ -28,9 +29,11 @@
     "yup": "^1.4.0"
   },
   "scripts": {
-    "NODE_OPTIONS": "--localstorage-file=/tmp/node-localstorage npm start",
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "build:prod": "GENERATE_SOURCEMAP=false react-scripts build",
+    "postbuild": "npm run copy-build",
+    "copy-build": "rm -rf ../api/wwwroot && cp -r build ../api/wwwroot",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

@@ -96,6 +96,9 @@ builder.Services.AddScoped<IFMPService, FMPService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<ILedgerService, LedgerService>();
+builder.Services.AddScoped<IPdfService, PdfService>();
+builder.Services.AddScoped<ILedgerWriterService, LedgerWriterService>();
+builder.Services.AddScoped<IImapService, ImapService>();
 
 builder.Services.AddHttpClient<IFMPService, FMPService>();
 
@@ -114,12 +117,19 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
+
+// Serve static files from wwwroot
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 app.UseCors(x => x.
 AllowAnyMethod().AllowAnyHeader().AllowCredentials().SetIsOriginAllowed(origin => true));
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// SPA fallback - serve index.html for all non-API routes
+app.MapFallbackToFile("index.html");
 
 app.Run();

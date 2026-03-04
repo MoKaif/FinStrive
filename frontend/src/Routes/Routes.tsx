@@ -12,6 +12,8 @@ import LoginPage from "../Pages/LoginPage/LoginPage";
 import RegisterPage from "../Pages/RegisterPage/RegisterPage";
 import HistoricalDividend from "../Components/HistoricalDividend/HistoricalDividend";
 import ProtectedRoute from "./ProtectedRoute";
+import TransactionsPage from "../Pages/Transactions/TransactionsPage";
+import ReconciliationPage from "../Pages/Reconciliation/ReconciliationPage";
 
 export const router = createBrowserRouter([
   {
@@ -26,6 +28,14 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute><SearchPage /></ProtectedRoute>,
       },
       { path: "design-guide", element: <DesignGuide /> },
+      {
+        path: "transactions",
+        element: <ProtectedRoute><TransactionsPage /></ProtectedRoute>
+      },
+      {
+        path: "reconciliation",
+        element: <ProtectedRoute><ReconciliationPage /></ProtectedRoute>
+      },
       {
         path: "company/:ticker",
         element: <ProtectedRoute><CompanyPage /></ProtectedRoute>,

@@ -1,0 +1,22 @@
+services:
+  app:
+    # FinStrive Unified Container
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: finstrive-app
+    network_mode: host
+    environment:
+      # These can be overridden in a .env file
+      - ConnectionStrings__DefaultConnection=${DB_CONNECTION:-Host=localhost;Database=FinStrive;Username=postgres;Password=YOUR_PASSWORD}
+      - JWT__Issuer=${JWT_ISSUER:-http://localhost:5101}
+      - JWT__Audience=${JWT_AUDIENCE:-http://localhost:5101}
+      - JWT__SigningKey=${JWT_SECRET:-YOUR_SUPER_SECRET_SIGNING_KEY_MIN_32_CHARS}
+      - LedgerPath=/ledger
+      - GmailAddress=${GMAIL_USER:-your-email@gmail.com}
+      - GoogleAppKey=${GMAIL_APP_PASSWORD:-your-app-password}
+      - CustomerID=${CUSTOMER_ID:-123456789}
+    volumes:
+      - ${HOST_LEDGER_PATH:-/home/nox/Nox/Finance}:/ledger
+    restart: unless-stopped
+

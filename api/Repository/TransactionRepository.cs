@@ -33,6 +33,35 @@ namespace api.Repository
             return transaction;
         }
 
+        public async Task<bool> ExistsBySourceRefAsync(string source, string sourceRef)
+        {
+            return await _context.Transactions
+                .AnyAsync(t => t.Source == source && t.SourceRef == sourceRef);
+        }
+
+        public async Task<List<Transaction>> GetByMappedStatusAsync(bool isMapped)
+        {
+            return await _context.Transactions
+                .Where(t => t.Mapped == isMapped)
+                .OrderByDescending(t => t.TxnDate)
+                .ToListAsync();
+        }
+
+        public async Task<Transaction?> UpdateAsync(int id, Transaction transaction)
+        {
+            var existing = await _context.Transactions.FindAsync(id);
+            if (existing == null) return null;
+
+            existing.Category = transaction.Category;
+            existing.DescriptionClean = transaction.DescriptionClean;
+            existing.Mapped = transaction.Mapped;
+            existing.AccountTo = transaction.AccountTo;
+            existing.AccountFrom = transaction.AccountFrom;
+
+            await _context.SaveChangesAsync();
+            return existing;
+        }
+
         public async Task<bool> ExistsAsync(int id)
         {
             return await _context.Transactions.AnyAsync(s => s.Id == id);

@@ -1,0 +1,9 @@
+**/.git
+**/.vscode
+**/bin
+**/obj
+**/node_modules
+**/publish
+frontend/build
+api/wwwroot/*
+!api/wwwroot/.gitkeep

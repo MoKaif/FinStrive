@@ -10,10 +10,14 @@ namespace api.Controllers
     public class ImportController : ControllerBase
     {
         private readonly ILedgerService _ledgerService;
+        private readonly IPdfService _pdfService;
+        private readonly Microsoft.Extensions.Configuration.IConfiguration _config;
 
-        public ImportController(ILedgerService ledgerService)
+        public ImportController(ILedgerService ledgerService, IPdfService pdfService, Microsoft.Extensions.Configuration.IConfiguration config)
         {
             _ledgerService = ledgerService;
+            _pdfService = pdfService;
+            _config = config;
         }
 
         [HttpPost("ledger")]
@@ -32,5 +36,19 @@ namespace api.Controllers
             }
         }
 
+        [HttpPost("pdf")]
+        public async Task<IActionResult> ImportPdf(IFormFile file)
+        {
+            try
+            {
+                var password = _config["CustomerID"];
+                var transactions = await _pdfService.ImportPdfAsync(file, password);
+                return Ok(new { message = "Import successful", count = transactions.Count, transactions = transactions });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 }

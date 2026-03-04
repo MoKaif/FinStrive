@@ -8,44 +8,57 @@ type Props = {};
 
 const Sidebar = (props: Props) => {
   return (
-    <nav className="block py-4 px-6 top-0 bottom-0 w-64 bg-white shadow-xl left-0 absolute flex-row flex-nowrap md:z-10 z-9999 transition-all duration-300 ease-in-out transform md:translate-x-0 -translate-x-full">
+    <nav className="block py-4 px-6 top-0 bottom-0 w-64 bg-background-card/95 border-r border-white/5 backdrop-blur-xl shadow-xl left-0 absolute flex-row flex-nowrap md:z-10 z-9999 transition-all duration-300 ease-in-out transform md:translate-x-0 -translate-x-full">
       <div className="flex-col min-h-full px-0 flex flex-wrap items-center justify-between w-full mx-auto overflow-y-auto overflow-x-hidden">
-        <div className="flex bg-white flex-col items-stretch opacity-100 relative mt-4 overflow-y-auto overflow-x-hidden h-auto z-40 items-center flex-1 rounded w-full">
-          <div className="md:flex-col md:min-w-full flex flex-col list-none">
+        <div className="flex flex-col items-stretch opacity-100 relative mt-4 overflow-y-auto overflow-x-hidden h-auto z-40 items-center flex-1 rounded w-full">
+          <div className="md:flex-col md:min-w-full flex flex-col list-none space-y-2">
+
+            {/* Primary Features */}
+            <div className="text-xs uppercase font-bold text-slate-500 mb-2 mt-4 px-2">Finance</div>
+            <Link
+              to="transactions"
+              className="flex items-center px-4 py-3 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 transition-all duration-200 group"
+            >
+              <FaMoneyBill className="text-primary group-hover:text-primary-light transition-colors" />
+              <h6 className="ml-3 font-medium text-sm">Transactions</h6>
+            </Link>
+
+            {/* Stock Features (Deprioritized) */}
+            <div className="text-xs uppercase font-bold text-slate-500 mb-2 mt-6 px-2">Stocks</div>
             <Link
               to="company-profile"
-              className="flex md:min-w-full text-blueGray-500 text-xs uppercase font-bold block pt-1 pb-4 no-underline"
+              className="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 group"
             >
-              <FaHome />
-              <h6 className="ml-3">Company Profile</h6>
+              <FaHome className="text-secondary group-hover:text-secondary-light transition-colors" />
+              <h6 className="ml-3 font-medium text-sm">Company Profile</h6>
             </Link>
             <Link
               to="income-statement"
-              className="flex md:min-w-full text-blueGray-500 text-xs uppercase font-bold block pt-1 pb-4 no-underline"
+              className="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 group"
             >
-              <FaTable />
-              <h6 className="ml-3">Income Statement</h6>
+              <FaTable className="text-secondary group-hover:text-secondary-light transition-colors" />
+              <h6 className="ml-3 font-medium text-sm">Income Statement</h6>
             </Link>
             <Link
               to="balance-sheet"
-              className="flex md:min-w-full text-blueGray-500 text-xs uppercase font-bold block pt-1 pb-4 no-underline"
+              className="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 group"
             >
-              <FaTableCells />
-              <h6 className="ml-3">Balance Sheet</h6>
+              <FaTableCells className="text-secondary group-hover:text-secondary-light transition-colors" />
+              <h6 className="ml-3 font-medium text-sm">Balance Sheet</h6>
             </Link>
             <Link
               to="cashflow-statement"
-              className="flex md:min-w-full text-blueGray-500 text-xs uppercase font-bold block pt-1 pb-4 no-underline"
+              className="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 group"
             >
-              <FaMoneyBill />
-              <h6 className="ml-3">Cashflow Statement</h6>
+              <FaMoneyBill className="text-secondary group-hover:text-secondary-light transition-colors" />
+              <h6 className="ml-3 font-medium text-sm">Cashflow Statement</h6>
             </Link>
             <Link
               to="historical-dividend"
-              className="flex md:min-w-full text-blueGray-500 text-xs uppercase font-bold block pt-1 pb-4 no-underline"
+              className="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 group"
             >
-              <SlGraph />
-              <h6 className="ml-3">Historical Dividend</h6>
+              <SlGraph className="text-secondary group-hover:text-secondary-light transition-colors" />
+              <h6 className="ml-3 font-medium text-sm">Historical Dividend</h6>
             </Link>
           </div>
         </div>

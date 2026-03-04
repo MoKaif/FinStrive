@@ -1,0 +1,42 @@
+# .NET
+[Bb]in/
+[Oo]bj/
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio
+.vs/
+.vscode/
+
+# Environment files
+.env*
+
+# Node / Frontend
+node_modules/
+/frontend/build/
+/frontend/dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python
+**/venv/
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# SQLite/Database
+*.db
+*.db-shm
+*.db-wal
+data/*.db
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Deployment
+publish/
+dist/
+build/

@@ -1,0 +1,13 @@
+{
+    "name": "finstrive-root",
+    "version": "1.0.0",
+    "description": "FinStrive Root Project",
+    "scripts": {
+        "start": "./run.sh",
+        "build": "cd frontend && npm run build:prod && cd ..",
+        "publish": "./build-production.sh",
+        "backend": "dotnet run --project api/api.csproj --launch-profile http",
+        "frontend": "npm start --prefix frontend",
+        "dev": "./run.sh"
+    }
+}

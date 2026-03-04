@@ -11,10 +11,10 @@ namespace api.Data
 {
     public class ApplicationDBContext : IdentityDbContext<AppUser>
     {
-        public ApplicationDBContext(DbContextOptions dbContextOptions)
+        public ApplicationDBContext(DbContextOptions<ApplicationDBContext> dbContextOptions)
         : base(dbContextOptions)
         {
-            
+
         }
         public DbSet<Stock> Stocks { get; set; }
         public DbSet<Comment> Comments { get; set; }
@@ -22,7 +22,7 @@ namespace api.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
-            builder.Entity<Portfolio>(x=>x.HasKey(p => new{p.AppUserId, p.StockId}));
+            builder.Entity<Portfolio>(x => x.HasKey(p => new { p.AppUserId, p.StockId }));
             builder.Entity<Portfolio>()
             .HasOne(u => u.AppUser)
             .WithMany(u => u.Portfolios)
