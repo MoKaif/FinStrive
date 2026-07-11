@@ -40,12 +40,23 @@ namespace api.Controllers
             return Ok(txns);
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] Transaction transaction)
         {
-            var txn = await _repo.GetByIdAsync(id);
-            if (txn == null) return NotFound();
-            return Ok(txn);
+            if (transaction == null) return BadRequest("Transaction data is required");
+
+            // Set defaults
+            transaction.CreatedAt = DateTime.UtcNow;
+            transaction.Mapped = true; // Manual transactions are considered mapped
+            transaction.Source = "manual";
+
+            var created = await _repo.CreateAsync(transaction);
+            if (created == null) return BadRequest("Failed to create transaction");
+
+            // Append to ledger since it's mapped
+            await _ledgerWriter.AppendToLedgerAsync(created);
+
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
         [HttpPut("{id}")]
@@ -57,12 +68,32 @@ namespace api.Controllers
             if (updated == null) return NotFound();
 
             // Append to ledger ONLY if it is mapped
-            if (updated.Mapped)
+            // Do not append skipped transactions to the ledger even if mapped is true
+            if (updated.Mapped && !updated.Skipped)
             {
                 await _ledgerWriter.AppendToLedgerAsync(updated);
             }
 
             return Ok(updated);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var txn = await _repo.GetByIdAsync(id);
+            if (txn == null || txn.Skipped) return NotFound();
+            return Ok(txn);
+        }
+
+        [HttpGet("balance/hdfc-net")]
+        public async Task<IActionResult> GetHDFCBankNetBalance()
+        {
+            var netBalance = await _repo.GetHDFCBankNetBalanceAsync();
+            return Ok(new { 
+                account = "Assets:Banking:HDFCBank", 
+                netBalance = netBalance,
+                description = "Total money into account - Total money out of account"
+            });
         }
     }
 }

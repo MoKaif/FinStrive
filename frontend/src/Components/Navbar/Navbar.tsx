@@ -26,6 +26,9 @@ const Navbar = (props: Props) => {
                 <Link to="/reconciliation" className="text-sm font-medium text-slate-300 hover:text-white transition-colors duration-200">
                   Reconciliation
                 </Link>
+                    <Link to="/portfolio" className="text-sm font-medium text-slate-300 hover:text-white transition-colors duration-200">
+                      Portfolio
+                    </Link>
                 {/* Deprioritized Stock Links */}
                 <Link to="/search" className="text-sm font-medium text-slate-500 hover:text-slate-300 transition-colors duration-200">
                   Stocks

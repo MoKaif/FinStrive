@@ -11,7 +11,7 @@ RUN npm run build:prod
 RUN npm run copy-build
 
 # Stage 2: Build Backend
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS backend-build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS backend-build
 WORKDIR /src
 COPY api/api.csproj ./api/
 RUN dotnet restore api/api.csproj
@@ -21,7 +21,7 @@ COPY --from=frontend-build /src/api/wwwroot ./api/wwwroot
 RUN dotnet publish api/api.csproj -c Release -o /app/publish
 
 # Stage 3: Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:10.0
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 COPY --from=backend-build /app/publish .
 

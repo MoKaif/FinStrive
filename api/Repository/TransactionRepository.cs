@@ -18,7 +18,10 @@ namespace api.Repository
 
         public async Task<List<Transaction>> GetAllAsync()
         {
-            return await _context.Transactions.ToListAsync();
+            // By default, do not return transactions that have been intentionally skipped
+            return await _context.Transactions
+                .Where(t => !t.Skipped)
+                .ToListAsync();
         }
 
         public async Task<Transaction?> GetByIdAsync(int id)
@@ -41,8 +44,9 @@ namespace api.Repository
 
         public async Task<List<Transaction>> GetByMappedStatusAsync(bool isMapped)
         {
+            // Exclude skipped transactions from mapped/unmapped queries
             return await _context.Transactions
-                .Where(t => t.Mapped == isMapped)
+                .Where(t => t.Mapped == isMapped && !t.Skipped)
                 .OrderByDescending(t => t.TxnDate)
                 .ToListAsync();
         }
@@ -57,6 +61,8 @@ namespace api.Repository
             existing.Mapped = transaction.Mapped;
             existing.AccountTo = transaction.AccountTo;
             existing.AccountFrom = transaction.AccountFrom;
+            existing.Amount = transaction.Amount;
+            existing.Skipped = transaction.Skipped;
 
             await _context.SaveChangesAsync();
             return existing;
@@ -65,6 +71,24 @@ namespace api.Repository
         public async Task<bool> ExistsAsync(int id)
         {
             return await _context.Transactions.AnyAsync(s => s.Id == id);
+        }
+
+        public async Task<decimal> GetHDFCBankNetBalanceAsync()
+        {
+            // Calculate balance excluding internal transfers
+            // Credits (to bank): +ABS(Amount)
+            // Debits (from bank): -ABS(Amount)
+            var balance = await _context.Transactions
+                .Where(t => t.AccountFrom != t.AccountTo && !t.Skipped)  // Exclude internal transfers and skipped
+                .SumAsync(t => 
+                    t.AccountTo == "Assets:Banking:HDFCBank" 
+                        ? System.Math.Abs(t.Amount)
+                        : t.AccountFrom == "Assets:Banking:HDFCBank"
+                            ? -System.Math.Abs(t.Amount)
+                            : 0m
+                );
+
+            return balance;
         }
     }
 }

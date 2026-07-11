@@ -14,6 +14,7 @@ import HistoricalDividend from "../Components/HistoricalDividend/HistoricalDivid
 import ProtectedRoute from "./ProtectedRoute";
 import TransactionsPage from "../Pages/Transactions/TransactionsPage";
 import ReconciliationPage from "../Pages/Reconciliation/ReconciliationPage";
+import PortfolioPage from "../Pages/Portfolio/PortfolioPage";
 
 export const router = createBrowserRouter([
   {
@@ -35,6 +36,10 @@ export const router = createBrowserRouter([
       {
         path: "reconciliation",
         element: <ProtectedRoute><ReconciliationPage /></ProtectedRoute>
+      },
+      {
+        path: "portfolio",
+        element: <ProtectedRoute><PortfolioPage /></ProtectedRoute>
       },
       {
         path: "company/:ticker",

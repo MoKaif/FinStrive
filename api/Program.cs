@@ -102,6 +102,25 @@ builder.Services.AddScoped<IImapService, ImapService>();
 
 builder.Services.AddHttpClient<IFMPService, FMPService>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", builder =>
+    {
+        builder
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials()
+            .WithOrigins(
+                "http://localhost:3000",
+                "http://localhost:5101",
+                "http://127.0.0.1:3000",
+                "http://127.0.0.1:5101",
+                "http://10.10.10.1:3000",
+                "http://10.10.10.1:5101"
+            );
+    });
+});
+
 builder.Services.AddControllers().AddNewtonsoftJson(options =>
 {
     options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
@@ -123,8 +142,7 @@ if (app.Environment.IsDevelopment())
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-app.UseCors(x => x.
-AllowAnyMethod().AllowAnyHeader().AllowCredentials().SetIsOriginAllowed(origin => true));
+app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

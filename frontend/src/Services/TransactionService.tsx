@@ -39,6 +39,16 @@ export const updateTransaction = async (id: number, transaction: Partial<Transac
         throw error;
     }
 }
+
+export const createTransaction = async (transaction: Omit<Transaction, 'id'>) => {
+    try {
+        const response = await axios.post<Transaction>(API_Base, transaction);
+        return response.data;
+    } catch (error) {
+        console.error("Error creating transaction", error);
+        throw error;
+    }
+}
 export const syncEmail = async () => {
     try {
         const response = await axios.post(`${API_Base}/sync-imap`);

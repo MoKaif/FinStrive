@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Transaction } from "../../Models/Transaction";
 import { getTransactions, updateTransaction } from "../../Services/TransactionService";
+import ManualTransactionModal from '../ManualTransactionModal/ManualTransactionModal';
 
 interface TransactionFilters {
     search: string;
@@ -23,6 +24,8 @@ const TransactionList: React.FC = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
     const [showFilters, setShowFilters] = useState(false);
+    const [editingTxn, setEditingTxn] = useState<Transaction | null>(null);
+    const [showEditModal, setShowEditModal] = useState(false);
 
     const [filters, setFilters] = useState<TransactionFilters>({
         search: '',
@@ -373,6 +376,9 @@ const TransactionList: React.FC = () => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                                     Status
                                 </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                                    Actions
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/10">
@@ -406,12 +412,49 @@ const TransactionList: React.FC = () => {
                                             {txn.mapped ? 'Mapped' : 'Unmapped'}
                                         </span>
                                     </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={async () => {
+                                                    // Mark skipped and remove from UI
+                                                    const original = transactions.find(t => t.id === txn.id);
+                                                    try {
+                                                        await updateTransaction(txn.id, { skipped: true, mapped: true });
+                                                        setTransactions(prev => prev.filter(t => t.id !== txn.id));
+                                                    } catch (err) {
+                                                        setError('Failed to skip transaction');
+                                                        if (original) setTransactions(prev => prev.map(t => t.id === original.id ? original : t));
+                                                    }
+                                                }}
+                                                className="text-xs px-3 py-1 rounded bg-yellow-600/20 text-yellow-400 hover:bg-yellow-600/30"
+                                            >
+                                                Skip
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setEditingTxn(txn);
+                                                    setShowEditModal(true);
+                                                }}
+                                                className="text-xs px-3 py-1 rounded bg-white/5 text-slate-300 hover:bg-white/10"
+                                            >
+                                                Edit
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
             </div>
+
+            {/* Edit Modal */}
+            <ManualTransactionModal
+                isOpen={showEditModal}
+                onClose={() => { setShowEditModal(false); setEditingTxn(null); }}
+                onSuccess={() => { setShowEditModal(false); setEditingTxn(null); fetchTransactions(); }}
+                existing={editingTxn}
+            />
 
             {/* Pagination */}
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">

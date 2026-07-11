@@ -1,9 +1,44 @@
-import axios from "axios";
+import axios from 'axios';
 import { PortfolioGet, PortfolioPost } from "../Models/Portfolio";
 import { handleError } from "../Helpers/ErrorHandler";
 
-const api = "/api/portfolio/";
+const BASE = '/api/portfolio';
+const api = '/api/portfolio/';
 
+// New endpoints: holdings upload, session, and ValueResearch proxies
+export const uploadHoldings = async (file: File) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    const res = await axios.post(`${BASE}/upload`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+    return res.data;
+}
+
+export const getHoldings = async () => {
+    const res = await axios.get(`${BASE}/holdings`);
+    return res.data;
+}
+
+export const setSession = async (phpSession: string) => {
+    const res = await axios.post(`${BASE}/session`, { phpSession });
+    return res.data;
+}
+
+export const getSession = async () => {
+    const res = await axios.get(`${BASE}/session`);
+    return res.data;
+}
+
+export const getPeriodReturns = async (labelIds: string, period = '1D', asOf = '') => {
+    const res = await axios.get(`${BASE}/period-returns`, { params: { labelIds, period, asOfDate: asOf } });
+    return res.data;
+}
+
+export const getPerformance = async (labelIds: string, period = 'ALL', asOf = '') => {
+    const res = await axios.get(`${BASE}/performance`, { params: { labelIds, period, asOfDate: asOf } });
+    return res.data;
+}
+
+// Existing portfolio APIs used elsewhere in the app (search/portfolio management)
 export const portfolioAddAPI = async (symbol: string) => {
   try {
     const data = await axios.post<PortfolioPost>(api + `?symbol=${symbol}`);
@@ -30,3 +65,5 @@ export const portfolioGetAPI = async () => {
     handleError(error);
   }
 };
+
+export default {};

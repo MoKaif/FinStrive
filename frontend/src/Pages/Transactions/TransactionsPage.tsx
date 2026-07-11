@@ -3,6 +3,7 @@ import TransactionList from '../../Components/TransactionList/TransactionList';
 import TransactionStats from '../../Components/TransactionStats/TransactionStats';
 import TransactionCharts from '../../Components/TransactionCharts/TransactionCharts';
 import PdfImportModal from '../../Components/PdfImportModal/PdfImportModal';
+import ManualTransactionModal from '../../Components/ManualTransactionModal/ManualTransactionModal';
 import { getTransactions, syncEmail } from '../../Services/TransactionService';
 import { Transaction } from '../../Models/Transaction';
 
@@ -12,6 +13,7 @@ const TransactionsPage = (props: Props) => {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [showImportModal, setShowImportModal] = useState(false);
+    const [showManualModal, setShowManualModal] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
     const [isSyncing, setIsSyncing] = useState(false);
 
@@ -87,6 +89,12 @@ const TransactionsPage = (props: Props) => {
                             >
                                 Import PDF
                             </button>
+                            <button
+                                onClick={() => setShowManualModal(true)}
+                                className="bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg transition-all flex items-center gap-2"
+                            >
+                                Add Manual
+                            </button>
                         </div>
                     </div>
 
@@ -113,6 +121,13 @@ const TransactionsPage = (props: Props) => {
             <PdfImportModal
                 isOpen={showImportModal}
                 onClose={() => setShowImportModal(false)}
+                onSuccess={handleImportSuccess}
+            />
+
+            {/* Manual Transaction Modal */}
+            <ManualTransactionModal
+                isOpen={showManualModal}
+                onClose={() => setShowManualModal(false)}
                 onSuccess={handleImportSuccess}
             />
         </div>

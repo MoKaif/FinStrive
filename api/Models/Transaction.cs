@@ -15,6 +15,10 @@ namespace api.Models
         public string Source { get; set; } = string.Empty; // 'ledger' | 'pdf'
         public string? SourceRef { get; set; }
         public bool Mapped { get; set; }
+        // If true the transaction was intentionally skipped during reconciliation
+        // and should be excluded from imports/analytics/calculations.
+        public bool Skipped { get; set; } = false;
+        public decimal? ClosingBalance { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

@@ -13,5 +13,6 @@ namespace api.Interfaces
         Task<bool> ExistsBySourceRefAsync(string source, string sourceRef);
         Task<bool> ExistsAsync(int id);
         Task<List<Transaction>> GetByMappedStatusAsync(bool isMapped);
+        Task<decimal> GetHDFCBankNetBalanceAsync();
     }
 }

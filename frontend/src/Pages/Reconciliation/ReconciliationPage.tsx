@@ -16,12 +16,20 @@ type Transaction = {
     mapped: boolean;
 };
 
+type TransactionEditForm = {
+    descriptionClean?: string;
+    category?: string;
+    accountFrom?: string;
+    accountTo?: string;
+    amount?: string;
+};
+
 const ReconciliationPage = () => {
     const { token } = useAuth();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [editingId, setEditingId] = useState<number | null>(null);
-    const [editForm, setEditForm] = useState<Partial<Transaction>>({});
+    const [editForm, setEditForm] = useState<TransactionEditForm>({});
 
     // Suggestions State
     const [categorySuggestions, setCategorySuggestions] = useState<string[]>([]);
@@ -78,7 +86,26 @@ const ReconciliationPage = () => {
             category: clean(txn.category),
             accountFrom: clean(txn.accountFrom),
             accountTo: clean(txn.accountTo),
-        });
+            amount: txn.amount.toString(),
+        } as any);
+    };
+
+    const handleSkip = async (txn: Transaction) => {
+        try {
+            const updatedTxn = {
+                ...txn,
+                mapped: true, // Mark as mapped
+                skipped: true // Mark as intentionally skipped
+            };
+
+            await axios.put(`/api/transactions/${txn.id}`, updatedTxn);
+
+            // Remove from list locally for instant feedback
+            setTransactions(prev => prev.filter(t => t.id !== txn.id));
+        } catch (error) {
+            console.error("Failed to skip transaction", error);
+            alert("Failed to skip transaction.");
+        }
     };
 
     const handleSave = async (id: number) => {
@@ -90,10 +117,14 @@ const ReconciliationPage = () => {
             // This fixes the issue where changing Category didn't update the Ledger entry which uses AccountTo
             const finalAccountTo = editForm.accountTo || editForm.category || original.accountTo;
 
+            // Parse amount
+            const finalAmount = editForm.amount ? parseFloat(editForm.amount) : original.amount;
+
             // Prepare updated transaction payload
             const updatedTxn = {
                 ...original,
                 ...editForm,
+                amount: finalAmount,
                 accountTo: finalAccountTo, // Use the resolved account
                 mapped: true // Mark as mapped on save
             };
@@ -146,6 +177,14 @@ const ReconciliationPage = () => {
                                             value={editForm.descriptionClean || ""}
                                             onChange={e => setEditForm({ ...editForm, descriptionClean: e.target.value })}
                                         />
+                                        <input
+                                            className="input-field py-2 text-sm"
+                                            type="number"
+                                            step="0.01"
+                                            placeholder="Amount"
+                                            value={editForm.amount || ""}
+                                            onChange={e => setEditForm({ ...editForm, amount: e.target.value })}
+                                        />
                                         <AutocompleteInput
                                             className="input-field py-2 text-sm"
                                             placeholder="Category"
@@ -197,9 +236,14 @@ const ReconciliationPage = () => {
                                             <button onClick={() => setEditingId(null)} className="py-2 px-4 text-sm text-slate-400 hover:text-white transition-colors">Cancel</button>
                                         </>
                                     ) : (
-                                        <button onClick={() => handleEdit(txn)} className="py-2 px-4 rounded-lg border border-white/10 hover:bg-white/5 text-slate-300 text-sm transition-all">
-                                            Edit
-                                        </button>
+                                        <>
+                                            <button onClick={() => handleEdit(txn)} className="py-2 px-4 rounded-lg border border-white/10 hover:bg-white/5 text-slate-300 text-sm transition-all">
+                                                Edit
+                                            </button>
+                                            <button onClick={() => handleSkip(txn)} className="py-2 px-4 rounded-lg bg-yellow-600/20 hover:bg-yellow-600/30 border border-yellow-600/30 text-yellow-400 text-sm transition-all">
+                                                Skip
+                                            </button>
+                                        </>
                                     )}
                                 </div>
 

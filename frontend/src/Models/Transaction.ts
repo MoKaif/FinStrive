@@ -9,4 +9,6 @@ export type Transaction = {
     category?: string;
     source: string;
     mapped: boolean;
+    skipped?: boolean;
+    closingBalance?: number;
 };

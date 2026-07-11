@@ -240,10 +240,12 @@ namespace api.Service
 
                 // Improved debit/credit detection
                 // Most UPI/ATM/POS are debits, but check for salary/interest credits
-                bool isCredit = narration.Contains("A2AINT") ||
-                               narration.Contains("SALARY") ||
-                               narration.Contains("INTEREST") ||
-                               narration.Contains("REFUND");
+                // Use case-insensitive comparison to handle varying text casing in PDFs
+                var narratorUpper = narration.ToUpperInvariant();
+                bool isCredit = narratorUpper.Contains("A2AINT") ||
+                               narratorUpper.Contains("SALARY") ||
+                               narratorUpper.Contains("INTEREST") ||
+                               narratorUpper.Contains("REFUND");
 
                 var transaction = new Transaction
                 {
@@ -254,6 +256,7 @@ namespace api.Service
                     Source = "pdf",
                     SourceRef = sourceRef,
                     Mapped = false,
+                    ClosingBalance = closingBalance,
                     CreatedAt = DateTime.UtcNow
                 };
 

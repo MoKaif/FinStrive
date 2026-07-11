@@ -54,6 +54,23 @@ const TransactionCharts: React.FC<TransactionChartsProps> = ({ transactions }) =
 
     const filteredTransactions = getFilteredTransactions();
 
+    // Aggregate totals for the currently selected time period
+    const periodIncome = filteredTransactions.reduce((s, t) => {
+        if (t.accountTo?.includes('HDFCBank') && (t.accountFrom?.includes('Income') || t.descriptionRaw?.toLowerCase().includes('salary') || t.descriptionRaw?.toLowerCase().includes('interest') || t.descriptionRaw?.toLowerCase().includes('refund'))) {
+            return s + t.amount;
+        }
+        return s;
+    }, 0);
+
+    const periodExpenses = filteredTransactions.reduce((s, t) => {
+        if (t.accountFrom?.includes('HDFCBank') && (t.accountTo?.includes('Expenses') || t.accountTo?.includes('Food') || t.accountTo?.includes('Transport'))) {
+            return s + Math.abs(t.amount);
+        }
+        return s;
+    }, 0);
+
+    const periodNet = periodIncome - periodExpenses;
+
     // Prepare spending trends data (daily aggregation)
     const getSpendingTrends = () => {
         const dailyData: { [key: string]: { income: number; expenses: number; date: string; sortDate: number } } = {};
@@ -70,9 +87,25 @@ const TransactionCharts: React.FC<TransactionChartsProps> = ({ transactions }) =
                     sortDate: dateObj.getTime()
                 };
             }
-            if (t.accountTo?.includes('HDFCBank')) {
+
+            // Only count legitimate income (external deposits)
+            if (t.accountTo?.includes('HDFCBank') &&
+                (t.accountFrom?.includes('Income') ||
+                 t.accountFrom?.includes('Softlink') ||
+                 t.descriptionRaw?.toLowerCase().includes('salary') ||
+                 t.descriptionRaw?.toLowerCase().includes('interest') ||
+                 t.descriptionRaw?.toLowerCase().includes('refund'))) {
                 dailyData[dateKey].income += t.amount;
-            } else if (t.accountFrom?.includes('HDFCBank')) {
+            }
+
+            // Only count legitimate expenses (external withdrawals)
+            if (t.accountFrom?.includes('HDFCBank') &&
+                (t.accountTo?.includes('Expenses') ||
+                 t.accountTo?.includes('Food') ||
+                 t.accountTo?.includes('Transport') ||
+                 t.accountTo?.includes('Entertainment') ||
+                 t.accountTo?.includes('Family') ||
+                 t.accountTo?.includes('Uncategorized'))) {
                 dailyData[dateKey].expenses += Math.abs(t.amount);
             }
         });
@@ -85,7 +118,13 @@ const TransactionCharts: React.FC<TransactionChartsProps> = ({ transactions }) =
         const categoryData: { [key: string]: number } = {};
 
         filteredTransactions
-            .filter(t => t.accountFrom?.includes('HDFCBank')) // Only expenses
+            .filter(t => t.accountFrom?.includes('HDFCBank') &&
+                        (t.accountTo?.includes('Expenses') ||
+                         t.accountTo?.includes('Food') ||
+                         t.accountTo?.includes('Transport') ||
+                         t.accountTo?.includes('Entertainment') ||
+                         t.accountTo?.includes('Family') ||
+                         t.accountTo?.includes('Uncategorized'))) // Only legitimate expenses
             .forEach(t => {
                 const category = t.category || 'Uncategorized';
                 categoryData[category] = (categoryData[category] || 0) + Math.abs(t.amount);
@@ -108,9 +147,25 @@ const TransactionCharts: React.FC<TransactionChartsProps> = ({ transactions }) =
             if (!monthlyData[month]) {
                 monthlyData[month] = { month, income: 0, expenses: 0 };
             }
-            if (t.accountTo?.includes('HDFCBank')) {
+
+            // Only count legitimate income (external deposits)
+            if (t.accountTo?.includes('HDFCBank') &&
+                (t.accountFrom?.includes('Income') ||
+                 t.accountFrom?.includes('Softlink') ||
+                 t.descriptionRaw?.toLowerCase().includes('salary') ||
+                 t.descriptionRaw?.toLowerCase().includes('interest') ||
+                 t.descriptionRaw?.toLowerCase().includes('refund'))) {
                 monthlyData[month].income += t.amount;
-            } else if (t.accountFrom?.includes('HDFCBank')) {
+            }
+
+            // Only count legitimate expenses (external withdrawals)
+            if (t.accountFrom?.includes('HDFCBank') &&
+                (t.accountTo?.includes('Expenses') ||
+                 t.accountTo?.includes('Food') ||
+                 t.accountTo?.includes('Transport') ||
+                 t.accountTo?.includes('Entertainment') ||
+                 t.accountTo?.includes('Family') ||
+                 t.accountTo?.includes('Uncategorized'))) {
                 monthlyData[month].expenses += Math.abs(t.amount);
             }
         });
@@ -140,6 +195,21 @@ const TransactionCharts: React.FC<TransactionChartsProps> = ({ transactions }) =
 
     return (
         <div className="space-y-6">
+            {/* Period summary */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="glass-card p-4">
+                    <div className="text-sm text-slate-400">Income ({timePeriod})</div>
+                    <div className="text-xl font-bold text-green-400">₹{periodIncome.toLocaleString('en-IN', {minimumFractionDigits:2})}</div>
+                </div>
+                <div className="glass-card p-4">
+                    <div className="text-sm text-slate-400">Expenses ({timePeriod})</div>
+                    <div className="text-xl font-bold text-red-400">₹{periodExpenses.toLocaleString('en-IN', {minimumFractionDigits:2})}</div>
+                </div>
+                <div className="glass-card p-4">
+                    <div className="text-sm text-slate-400">Net ({timePeriod})</div>
+                    <div className={`text-xl font-bold ${periodNet >= 0 ? 'text-green-400' : 'text-red-400'}`}>₹{periodNet.toLocaleString('en-IN', {minimumFractionDigits:2})}</div>
+                </div>
+            </div>
             {/* Time Period Selector */}
             <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-white">Analytics</h2>
