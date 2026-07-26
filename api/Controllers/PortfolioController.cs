@@ -5,7 +5,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using ExcelDataReader;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -26,8 +25,6 @@ namespace api.Controllers
         private readonly IStockRepository _stockRepo;
         private readonly IPortfolioRepository _portfolioRepo;
         private readonly IFMPService _fmpService;
-        private readonly IWebHostEnvironment _env;
-        private readonly string _storagePath;
         private readonly string _sessionFile;
 
         public PortfolioController(
@@ -41,9 +38,7 @@ namespace api.Controllers
             _stockRepo = stockRepo;
             _portfolioRepo = portfolioRepo;
             _fmpService = fmpService;
-            _env = env;
-            _storagePath = Path.Combine(env.ContentRootPath, "PortfolioFiles");
-            Directory.CreateDirectory(_storagePath);
+            // Statement storage moved to HoldingsImportService, which owns PortfolioFiles/.
             _sessionFile = Path.Combine(env.ContentRootPath, "Checkpoint", "portfolio_session.txt");
         }
 
@@ -104,64 +99,9 @@ namespace api.Controllers
             return Ok();
         }
 
-        [HttpPost("upload")]
-        public async Task<IActionResult> Upload(IFormFile file)
-        {
-            if (file == null || file.Length == 0) return BadRequest("No file uploaded");
-
-            var fileName = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss_") + Path.GetFileName(file.FileName);
-            var savePath = Path.Combine(_storagePath, fileName);
-
-            using (var stream = System.IO.File.Create(savePath))
-            {
-                await file.CopyToAsync(stream);
-            }
-
-            return Ok(new { file = fileName });
-        }
-
-        [HttpGet("holdings")]
-        public IActionResult GetHoldings()
-        {
-            var files = Directory.GetFiles(_storagePath);
-            if (!files.Any()) return Ok(new { holdings = new List<object>() });
-
-            var latest = files.OrderByDescending(f => System.IO.File.GetLastWriteTimeUtc(f)).First();
-            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-
-            using (var stream = System.IO.File.Open(latest, FileMode.Open, FileAccess.Read))
-            using (var reader = ExcelReaderFactory.CreateReader(stream))
-            {
-                var results = new List<Dictionary<string, object>>();
-                var header = new List<string>();
-                var first = true;
-                while (reader.Read())
-                {
-                    if (first)
-                    {
-                        for (int c = 0; c < reader.FieldCount; c++)
-                        {
-                            var h = reader.GetValue(c)?.ToString() ?? ("col" + c);
-                            header.Add(h);
-                        }
-                        first = false;
-                        continue;
-                    }
-
-                    var row = new Dictionary<string, object>();
-                    bool empty = true;
-                    for (int c = 0; c < header.Count; c++)
-                    {
-                        var val = reader.GetValue(c);
-                        if (val != null && val.ToString().Trim().Length > 0) empty = false;
-                        row[header[c]] = val ?? string.Empty;
-                    }
-                    if (!empty) results.Add(row);
-                }
-
-                return Ok(new { file = Path.GetFileName(latest), holdings = results });
-            }
-        }
+        // Statement upload and holdings retrieval now live in HoldingsController,
+        // which parses each section properly instead of flattening the sheet into
+        // untyped rows. See api/holdings/import.
 
         [HttpPost("session")]
         public async Task<IActionResult> SetSession([FromBody] SessionDto dto)

@@ -5,18 +5,8 @@ import { handleError } from "../Helpers/ErrorHandler";
 const BASE = '/api/portfolio';
 const api = '/api/portfolio/';
 
-// New endpoints: holdings upload, session, and ValueResearch proxies
-export const uploadHoldings = async (file: File) => {
-    const fd = new FormData();
-    fd.append('file', file);
-    const res = await axios.post(`${BASE}/upload`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-    return res.data;
-}
-
-export const getHoldings = async () => {
-    const res = await axios.get(`${BASE}/holdings`);
-    return res.data;
-}
+// Statement upload and holdings retrieval live in HoldingsService.tsx.
+// What remains here is the ValueResearch session proxy and stock-portfolio CRUD.
 
 export const setSession = async (phpSession: string) => {
     const res = await axios.post(`${BASE}/session`, { phpSession });

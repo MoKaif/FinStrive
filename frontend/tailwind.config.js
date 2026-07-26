@@ -27,11 +27,34 @@ module.exports = {
           primary: "#f8fafc", // Slate 50
           secondary: "#94a3b8", // Slate 400
           muted: "#64748b", // Slate 500
-        }
+        },
+        // Holdings terminal. A colder, flatter ground than the indigo/glass
+        // system above, so dense financial tables read as a statement rather
+        // than as stacked dashboard cards.
+        term: {
+          ink: "#05070A",    // page
+          panel: "#0C1015",  // block surface
+          raised: "#11161D", // hover / header rows
+          rule: "#1C232B",   // hairlines
+          text: "#E6E9EC",
+          muted: "#7E8994",  // 5.4:1 on panel
+          dim: "#67727E",    // supplementary labels only
+          accent: "#E8A33D", // structural: active state, statement date
+          gain: "#46C68C",
+          loss: "#E8635F",
+          // Categorical slots for asset classes. Validated as a set against
+          // the panel surface for lightness, chroma, CVD separation and
+          // contrast; do not re-order or substitute individually.
+          s1: "#3987e5", // Mutual Funds
+          s2: "#d95926", // Stocks & ETFs
+          s3: "#199e70", // REITs & InvITs
+          s4: "#c98500", // PPF
+        },
       },
       fontFamily: {
         sans: ["Inter", "sans-serif"],
         display: ["Outfit", "sans-serif"],
+        mono: ['"IBM Plex Mono"', "ui-monospace", "SFMono-Regular", "monospace"],
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out',

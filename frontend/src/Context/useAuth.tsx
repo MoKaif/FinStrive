@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { loginAPI, registerAPI } from "../Services/AuthService";
 import { toast } from "react-toastify";
 import React from "react";
-import axios from "axios";
 
 type UserContextType = {
   user: UserProfile | null;
@@ -35,7 +34,8 @@ export const UserProvider = ({ children }: Props) => {
     if (user && token) {
       setUser(JSON.parse(user));
       setToken(token);
-      axios.defaults.headers.common["Authorization"] = "Bearer " + token;
+      // The auth header itself is attached per-request by the interceptor
+      // installed in index.tsx, so it stays correct after login and logout too.
     }
     setIsReady(true);
   }, []);
