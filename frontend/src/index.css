@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 @layer base {
   body {
@@ -30,6 +30,25 @@
 
   .input-field {
     @apply w-full bg-background-dark border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all;
+  }
+
+  /* Holdings terminal primitives. Flat surfaces and hairlines, no glass and no
+     nested cards, so a dense table reads as one continuous statement. */
+  .term-panel {
+    @apply bg-term-panel border border-term-rule;
+  }
+
+  .term-label {
+    @apply font-mono text-[10px] uppercase tracking-[0.16em] text-term-dim;
+  }
+
+  /* Every figure is monospaced and tabular so columns align digit-for-digit. */
+  .term-num {
+    @apply font-mono tabular-nums;
+  }
+
+  .term-focus {
+    @apply focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-term-accent focus-visible:ring-offset-1 focus-visible:ring-offset-term-ink;
   }
 }
 

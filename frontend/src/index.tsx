@@ -5,6 +5,10 @@ import "./index.css";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import { router } from "./Routes/Routes";
+import { installAuthInterceptor } from "./Services/AuthInterceptor";
+
+// Must run before the first request any component makes.
+installAuthInterceptor();
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement

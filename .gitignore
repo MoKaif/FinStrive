@@ -40,3 +40,12 @@ Thumbs.db
 publish/
 dist/
 build/
+
+# Frontend bundle copied in by `npm run postbuild`
+api/wwwroot/
+frontend/frontend_log.txt
+
+# Imported holdings statements. These are personal financial documents
+# containing PAN and demat account numbers; they are archived at runtime and
+# must never be committed.
+api/PortfolioFiles/
