@@ -7,14 +7,14 @@ type Props = {
 };
 
 const StockCommentList = ({ comments }: Props) => {
+  if (!comments || comments.length === 0) return null;
+
   return (
-    <>
-      {comments
-        ? comments.map((comment) => {
-            return <StockCommentListItem comment={comment} />;
-          })
-        : ""}
-    </>
+    <div className="space-y-3">
+      {comments.map((comment, index) => (
+        <StockCommentListItem key={`${comment.createdBy}-${index}`} comment={comment} />
+      ))}
+    </div>
   );
 };
 

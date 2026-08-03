@@ -16,7 +16,7 @@ const HomePage = (props: Props) => {
   }, [isLoggedIn, navigate]);
 
   return (
-    <div className="bg-background-dark min-h-screen">
+    <div className="min-h-screen bg-term-ink">
       <Hero />
     </div>
   );

@@ -1,67 +1,51 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import { FaHome, FaTable, FaMoneyBill } from "react-icons/fa";
-import { FaTableCells } from "react-icons/fa6";
-import { SlGraph } from "react-icons/sl";
+import { NavLink } from "react-router-dom";
 
 type Props = {};
 
+const groups = [
+  {
+    label: "Ledger",
+    links: [{ to: "/transactions", label: "Transactions" }],
+  },
+  {
+    label: "Fundamentals",
+    links: [
+      { to: "company-profile", label: "Profile" },
+      { to: "income-statement", label: "Income statement" },
+      { to: "balance-sheet", label: "Balance sheet" },
+      { to: "cashflow-statement", label: "Cash flow" },
+      { to: "historical-dividend", label: "Dividends" },
+    ],
+  },
+];
+
+// Active section is marked with an accent rule on the left edge, matching how
+// the navbar marks the active tab. Icons are gone — the labels are the labels.
+const item = ({ isActive }: { isActive: boolean }) =>
+  [
+    "block border-l py-1.5 pl-3 text-[12px] transition-colors",
+    isActive
+      ? "border-term-accent text-term-text"
+      : "border-transparent text-term-muted hover:border-term-rule hover:text-term-text",
+  ].join(" ");
+
 const Sidebar = (props: Props) => {
   return (
-    <nav className="block py-4 px-6 top-0 bottom-0 w-64 bg-background-card/95 border-r border-white/5 backdrop-blur-xl shadow-xl left-0 absolute flex-row flex-nowrap md:z-10 z-9999 transition-all duration-300 ease-in-out transform md:translate-x-0 -translate-x-full">
-      <div className="flex-col min-h-full px-0 flex flex-wrap items-center justify-between w-full mx-auto overflow-y-auto overflow-x-hidden">
-        <div className="flex flex-col items-stretch opacity-100 relative mt-4 overflow-y-auto overflow-x-hidden h-auto z-40 items-center flex-1 rounded w-full">
-          <div className="md:flex-col md:min-w-full flex flex-col list-none space-y-2">
-
-            {/* Primary Features */}
-            <div className="text-xs uppercase font-bold text-slate-500 mb-2 mt-4 px-2">Finance</div>
-            <Link
-              to="transactions"
-              className="flex items-center px-4 py-3 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 transition-all duration-200 group"
-            >
-              <FaMoneyBill className="text-primary group-hover:text-primary-light transition-colors" />
-              <h6 className="ml-3 font-medium text-sm">Transactions</h6>
-            </Link>
-
-            {/* Stock Features (Deprioritized) */}
-            <div className="text-xs uppercase font-bold text-slate-500 mb-2 mt-6 px-2">Stocks</div>
-            <Link
-              to="company-profile"
-              className="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 group"
-            >
-              <FaHome className="text-secondary group-hover:text-secondary-light transition-colors" />
-              <h6 className="ml-3 font-medium text-sm">Company Profile</h6>
-            </Link>
-            <Link
-              to="income-statement"
-              className="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 group"
-            >
-              <FaTable className="text-secondary group-hover:text-secondary-light transition-colors" />
-              <h6 className="ml-3 font-medium text-sm">Income Statement</h6>
-            </Link>
-            <Link
-              to="balance-sheet"
-              className="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 group"
-            >
-              <FaTableCells className="text-secondary group-hover:text-secondary-light transition-colors" />
-              <h6 className="ml-3 font-medium text-sm">Balance Sheet</h6>
-            </Link>
-            <Link
-              to="cashflow-statement"
-              className="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 group"
-            >
-              <FaMoneyBill className="text-secondary group-hover:text-secondary-light transition-colors" />
-              <h6 className="ml-3 font-medium text-sm">Cashflow Statement</h6>
-            </Link>
-            <Link
-              to="historical-dividend"
-              className="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 group"
-            >
-              <SlGraph className="text-secondary group-hover:text-secondary-light transition-colors" />
-              <h6 className="ml-3 font-medium text-sm">Historical Dividend</h6>
-            </Link>
+    <nav className="absolute bottom-0 left-0 top-0 hidden w-56 border-r border-term-rule bg-term-panel px-4 pt-24 md:block">
+      <div className="space-y-6">
+        {groups.map((group) => (
+          <div key={group.label}>
+            <p className="term-label mb-2 pl-3">{group.label}</p>
+            <div className="space-y-0.5">
+              {group.links.map((link) => (
+                <NavLink key={link.to} to={link.to} className={item} end>
+                  {link.label}
+                </NavLink>
+              ))}
+            </div>
           </div>
-        </div>
+        ))}
       </div>
     </nav>
   );

@@ -1,7 +1,11 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useCallback, useEffect, useState } from "react";
 import { UserProfile } from "../Models/User";
 import { useNavigate } from "react-router-dom";
 import { loginAPI, registerAPI } from "../Services/AuthService";
+import {
+  isTokenExpired,
+  setSessionExpiredHandler,
+} from "../Services/AuthInterceptor";
 import { toast } from "react-toastify";
 import React from "react";
 
@@ -24,6 +28,13 @@ export const UserProvider = ({ children }: Props) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isReady, setIsReady] = useState(false);
 
+  const clearSession = useCallback(() => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setUser(null);
+    setToken(null);
+  }, []);
+
   useEffect(() => {
     let user;
     let token;
@@ -31,14 +42,30 @@ export const UserProvider = ({ children }: Props) => {
       user = localStorage.getItem("user");
       token = localStorage.getItem("token");
     }
-    if (user && token) {
+    // A lapsed token is not a session. Restoring one made the app look signed
+    // in while every authorised call came back 401.
+    if (user && token && !isTokenExpired(token)) {
       setUser(JSON.parse(user));
       setToken(token);
       // The auth header itself is attached per-request by the interceptor
       // installed in index.tsx, so it stays correct after login and logout too.
+    } else if (user || token) {
+      clearSession();
     }
     setIsReady(true);
-  }, []);
+  }, [clearSession]);
+
+  // The API is the authority on whether a token is still good; a clock that is
+  // off, or a key rotation, can reject one that still looks valid from here.
+  useEffect(() => {
+    setSessionExpiredHandler(() => {
+      if (!localStorage.getItem("token")) return; // already signed out
+      clearSession();
+      toast.info("Your session expired. Please sign in again.");
+      navigate("/login");
+    });
+    return () => setSessionExpiredHandler(null);
+  }, [clearSession, navigate]);
 
   const registerUser = async (
     email: string,
@@ -87,10 +114,7 @@ export const UserProvider = ({ children }: Props) => {
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setUser(null);
-    setToken("");
+    clearSession();
     navigate("/");
   };
 

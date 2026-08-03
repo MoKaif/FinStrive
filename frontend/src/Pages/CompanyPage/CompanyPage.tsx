@@ -25,14 +25,14 @@ const CompanyPage = (props: Props) => {
   return (
     <>
       {company ? (
-        <div className="w-full relative flex ct-docs-disable-sidebar-content overflow-x-hidden">
+        <div className="relative flex w-full overflow-x-hidden">
           <Sidebar />
           <CompanyDashboard ticker={ticker!}>
-            <Tile title="Company Name" subTitle={company.companyName} />
-            <Tile title="Price" subTitle={"₹" + company.price.toString()} />
-            <Tile title="DCF" subTitle={"₹" + company.dcf.toString()} />
+            <Tile title="Company" subTitle={company.companyName} />
+            <Tile title="Price" subTitle={"$" + company.price.toString()} />
+            <Tile title="DCF" subTitle={"$" + company.dcf.toString()} />
             <Tile title="Sector" subTitle={company.sector} />
-            <p className="bg-white shadow rounded text-medium font-medium text-gray-900 p-3 mt-1 m-4">
+            <p className="bg-term-panel px-4 py-4 text-[13px] leading-relaxed text-term-muted sm:col-span-2 lg:col-span-4">
               {company.description}
             </p>
           </CompanyDashboard>

@@ -102,128 +102,97 @@ const PdfImportModal: React.FC<PdfImportModalProps> = ({ isOpen, onClose, onSucc
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-            <div className="glass-card max-w-2xl w-full p-8 animate-scale-in">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-white">Import PDF Statement</h2>
-                    <button
-                        onClick={handleClose}
-                        disabled={uploading}
-                        className="text-slate-400 hover:text-white transition-colors text-2xl"
-                    >
-                        ×
-                    </button>
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-term-ink/80 p-4 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="pdf-import-title"
+            onClick={uploading ? undefined : handleClose}
+        >
+            <div className="term-panel w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+                <div className="border-b border-term-rule px-5 py-3">
+                    <h2 id="pdf-import-title" className="font-display text-[15px] font-semibold text-term-text">
+                        Import PDF statement
+                    </h2>
+                    <p className="mt-1 text-[11.5px] leading-relaxed text-term-muted">
+                        Transactions are read out of the statement and added to the ledger. Bank
+                        statement PDFs only.
+                    </p>
                 </div>
 
-                {/* Drag and Drop Zone */}
-                <div
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    className={`border-2 border-dashed rounded-xl p-12 text-center transition-all ${isDragging
-                            ? 'border-primary bg-primary/10'
-                            : 'border-slate-600 hover:border-slate-500'
+                <div className="px-5 py-4">
+                    <div
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        className={`border border-dashed px-6 py-10 text-center transition-colors ${
+                            isDragging ? 'border-term-accent bg-term-accent/5' : 'border-term-rule'
                         }`}
-                >
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="text-6xl">📄</div>
-                        <div>
-                            <p className="text-white font-medium mb-2">
-                                {file ? file.name : 'Drag and drop your PDF here'}
-                            </p>
-                            <p className="text-slate-400 text-sm">or</p>
-                        </div>
+                    >
+                        <p className="text-[13px] text-term-muted">Drop a PDF here</p>
                         <input
                             ref={fileInputRef}
                             type="file"
                             accept=".pdf"
                             onChange={handleFileSelect}
-                            className="hidden"
+                            className="sr-only"
                         />
                         <button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={uploading}
-                            className="btn-primary"
+                            className="term-btn mt-4"
                         >
-                            Browse Files
+                            Choose file
                         </button>
-                        {file && (
-                            <div className="mt-4 p-4 bg-white/5 rounded-lg w-full">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-2xl">📄</span>
-                                        <div>
-                                            <p className="text-white font-medium">{file.name}</p>
-                                            <p className="text-slate-400 text-sm">
-                                                {(file.size / 1024 / 1024).toFixed(2)} MB
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => setFile(null)}
-                                        disabled={uploading}
-                                        className="text-red-400 hover:text-red-300 transition-colors"
-                                    >
-                                        Remove
-                                    </button>
-                                </div>
-                            </div>
-                        )}
                     </div>
+
+                    {file && (
+                        <div className="mt-4 flex items-center justify-between gap-4 border border-term-rule px-3 py-2">
+                            <div className="min-w-0">
+                                <p className="truncate text-[12px] text-term-text">{file.name}</p>
+                                <p className="term-num text-[11px] text-term-dim">
+                                    {(file.size / 1024 / 1024).toFixed(2)} MB
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setFile(null)}
+                                disabled={uploading}
+                                className="term-focus shrink-0 text-[11px] text-term-muted hover:text-term-loss"
+                            >
+                                Remove
+                            </button>
+                        </div>
+                    )}
+
+                    {uploading && (
+                        <div className="mt-4">
+                            <div className="mb-1.5 flex items-baseline justify-between">
+                                <span className="term-label">Uploading</span>
+                                <span className="term-num text-[11px] text-term-muted">{progress}%</span>
+                            </div>
+                            <div className="h-px w-full bg-term-rule">
+                                <div
+                                    className="h-px bg-term-accent transition-all duration-300 ease-out"
+                                    style={{ width: `${progress}%` }}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {message && (
+                        <p className={`mt-4 text-[12px] ${message.type === 'success' ? 'text-term-gain' : 'text-term-loss'}`}>
+                            {message.text}
+                        </p>
+                    )}
                 </div>
 
-                {/* Progress Bar */}
-                {uploading && (
-                    <div className="mt-6">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-slate-400 text-sm">Uploading...</span>
-                            <span className="text-white text-sm font-medium">{progress}%</span>
-                        </div>
-                        <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
-                            <div
-                                className="bg-primary h-full transition-all duration-300 ease-out"
-                                style={{ width: `${progress}%` }}
-                            />
-                        </div>
-                    </div>
-                )}
-
-                {/* Message */}
-                {message && (
-                    <div
-                        className={`mt-6 p-4 rounded-lg ${message.type === 'success'
-                                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                            }`}
-                    >
-                        {message.text}
-                    </div>
-                )}
-
-                {/* Actions */}
-                <div className="flex gap-4 mt-8">
-                    <button
-                        onClick={handleUpload}
-                        disabled={!file || uploading}
-                        className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {uploading ? 'Importing...' : 'Import'}
-                    </button>
-                    <button
-                        onClick={handleClose}
-                        disabled={uploading}
-                        className="flex-1 bg-white/5 hover:bg-white/10 text-white font-medium py-2 px-4 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
+                <div className="flex items-center justify-end gap-3 border-t border-term-rule px-5 py-3">
+                    <button onClick={handleClose} disabled={uploading} className="term-btn">
                         Cancel
                     </button>
-                </div>
-
-                {/* Info */}
-                <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                    <p className="text-blue-400 text-sm">
-                        <strong>Note:</strong> Only PDF bank statements are supported. The system will automatically extract transactions and add them to your database.
-                    </p>
+                    <button onClick={handleUpload} disabled={!file || uploading} className="term-btn-accent">
+                        {uploading ? 'Importing…' : 'Import'}
+                    </button>
                 </div>
             </div>
         </div>

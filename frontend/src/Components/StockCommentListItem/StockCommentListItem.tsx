@@ -7,19 +7,13 @@ type Props = {
 
 const StockCommentListItem = ({ comment }: Props) => {
   return (
-    <div className="relative grid grid-cols-1 gap-4 ml-4 p-4 mb-8 w-full border rounded-lg bg-white shadow-lg">
-      <div className="relative flex gap-4">
-        <div className="flex flex-col w-full">
-          <div className="flex flex-row justify-between">
-            <p className="relative text-xl whitespace-nowrap truncate overflow-hidden">
-              {comment.title}
-            </p>
-          </div>
-          <p className="text-dark text-sm">@{comment.createdBy}</p>
-        </div>
+    <article className="term-panel px-4 py-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <p className="truncate text-[13px] font-medium text-term-text">{comment.title}</p>
+        <p className="term-label">@{comment.createdBy}</p>
       </div>
-      <p className="-mt-4 text-gray-500">{comment.content}</p>
-    </div>
+      <p className="mt-2 text-[13px] leading-relaxed text-term-muted">{comment.content}</p>
+    </article>
   );
 };
 

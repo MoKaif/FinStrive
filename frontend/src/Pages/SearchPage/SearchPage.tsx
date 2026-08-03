@@ -1,5 +1,4 @@
 import React, { useState, ChangeEvent, SyntheticEvent, useEffect } from "react";
-import Navbar from "../../Components/Navbar/Navbar";
 import { CompanySearch } from "../../company";
 import { searchCompanies } from "../../api";
 import Search from "../../Components/Search/Search";
@@ -78,22 +77,41 @@ const SearchPage = (props: Props) => {
     }
   };
   return (
-    <>
-      <Search
-        onSearchSubmit={onSearchSubmit}
-        search={search}
-        handleSearchChange={handleSearchChange}
-      />
-      <ListPortfolio
-        portfolioValues={portfolioValues!}
-        onPortfolioDelete={onPortfolioDelete}
-      />
-      <CardList
-        searchResults={searchResult}
-        onPortfolioCreate={onPortfolioCreate}
-      />
-      {serverError && <div>Unable to connect to API</div>}
-    </>
+    <div className="min-h-screen bg-term-ink px-4 pb-16 pt-24 text-term-text sm:px-8">
+      <div className="mx-auto max-w-[88rem] space-y-5">
+        <header className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 border-b border-term-rule pb-4">
+          <div>
+            <h1 className="font-display text-[28px] font-semibold leading-none tracking-tight text-term-text">
+              Stocks
+            </h1>
+            <p className="mt-2 text-[12px] text-term-muted">
+              Company lookup and fundamentals. Coverage is US markets only — Indian
+              holdings are tracked from the statement on the portfolio tab.
+            </p>
+          </div>
+        </header>
+
+        <Search
+          onSearchSubmit={onSearchSubmit}
+          search={search}
+          handleSearchChange={handleSearchChange}
+        />
+
+        <ListPortfolio
+          portfolioValues={portfolioValues!}
+          onPortfolioDelete={onPortfolioDelete}
+        />
+
+        <CardList
+          searchResults={searchResult}
+          onPortfolioCreate={onPortfolioCreate}
+        />
+
+        {serverError && (
+          <p className="text-[13px] text-term-loss">Could not reach the market data API.</p>
+        )}
+      </div>
+    </div>
   );
 };
 

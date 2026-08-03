@@ -9,6 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-08-03
+
+### Changed
+- The rest of the app now uses the terminal language the portfolio tab
+  introduced: flat panels, hairline rules, monospaced tabular figures, and
+  hierarchy carried by weight and separation rather than size, gradient or
+  shadow. Covers the navbar, home, sign-in and registration, transactions,
+  reconciliation, the stock screens and every shared control. Emoji headings,
+  gradient buttons and the glass cards are gone.
+- The landing page describes what the app does instead of advertising "20k+
+  users" and "$100M+ tracked" against a single-user ledger.
+
+### Fixed
+- Editing a transaction's date had no effect. The repository copied every
+  editable field except `TxnDate`, so the API answered 200 and the row kept its
+  original date. It now also picks up an edited `DescriptionRaw`, and normalises
+  the date to UTC for the `timestamptz` column.
+- Sessions no longer half-expire. Tokens last a week and nothing checked that,
+  so once one lapsed the app still looked signed in — most endpoints carry no
+  `[Authorize]` attribute and kept answering — while the holdings API returned
+  401. The stored token is now checked on boot, and a 401 from our own API
+  clears the session and returns you to sign-in.
+- Tokens are no longer retired early. `SecurityTokenDescriptor.Expires` is read
+  as UTC, and it was being given local time, cutting the life of every token by
+  the host's UTC offset.
+- Editing a category in the ledger sent one request per keystroke; it now saves
+  when the field is left.
+
 ## [1.1.0] - 2026-07-26
 
 ### Added

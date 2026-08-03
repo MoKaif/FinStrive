@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useAuth } from "../../Context/useAuth";
+import { toast } from "react-toastify";
+import { amount, statementDate } from "../../Helpers/Money";
 import AutocompleteInput from "../../Components/AutocompleteInput/AutocompleteInput";
 
 type Transaction = {
@@ -25,7 +26,6 @@ type TransactionEditForm = {
 };
 
 const ReconciliationPage = () => {
-    const { token } = useAuth();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [editingId, setEditingId] = useState<number | null>(null);
@@ -104,7 +104,7 @@ const ReconciliationPage = () => {
             setTransactions(prev => prev.filter(t => t.id !== txn.id));
         } catch (error) {
             console.error("Failed to skip transaction", error);
-            alert("Failed to skip transaction.");
+            toast.error("Could not skip that transaction.");
         }
     };
 
@@ -137,125 +137,145 @@ const ReconciliationPage = () => {
 
         } catch (error) {
             console.error("Failed to map transaction", error);
-            alert("Failed to save transaction.");
+            toast.error("Could not save that transaction.");
         }
     };
 
     return (
-        <div className="min-h-screen bg-background-dark p-8 pt-28">
-            <div className="container mx-auto">
-                <div className="flex justify-between items-center mb-8">
-                    <div>
-                        <h1 className="text-3xl font-bold font-display text-white mb-2">Reconciliation</h1>
-                        <p className="text-slate-400">Review and map {transactions.length} pending transactions.</p>
-                    </div>
-                </div>
+        <div className="min-h-screen bg-term-ink px-4 pb-16 pt-24 text-term-text sm:px-8">
+            <div className="mx-auto max-w-[88rem] space-y-5">
+                <header className="border-b border-term-rule pb-4">
+                    <h1 className="font-display text-[28px] font-semibold leading-none tracking-tight text-term-text">
+                        Reconciliation
+                    </h1>
+                    <p className="mt-2 text-[12px] text-term-muted">
+                        {isLoading
+                            ? "Loading…"
+                            : `${transactions.length} ${transactions.length === 1 ? "entry" : "entries"} still to map`}
+                    </p>
+                </header>
 
                 {isLoading ? (
-                    <div className="text-white text-center py-20">Loading...</div>
+                    <p className="term-label py-20 text-center">Loading…</p>
+                ) : transactions.length === 0 ? (
+                    <section className="term-panel px-8 py-16 text-center">
+                        <h2 className="font-display text-[20px] font-semibold text-term-text">Nothing pending</h2>
+                        <p className="mx-auto mt-3 max-w-md text-[13px] leading-relaxed text-term-muted">
+                            Every transaction has an account and a category. New ones appear here as
+                            they are imported.
+                        </p>
+                    </section>
                 ) : (
-                    <div className="grid gap-6">
+                    <div className="space-y-px bg-term-rule">
                         {transactions.map((txn) => (
-                            <div key={txn.id} className="glass-card p-6 flex flex-col md:flex-row gap-6 items-start md:items-center animate-fade-in hover:border-primary/30 transition-colors">
-
-                                {/* Static Info */}
-                                <div className="flex-1 min-w-[200px]">
-                                    <div className="text-sm text-slate-500 font-mono mb-1">{new Date(txn.txnDate).toLocaleDateString()}</div>
-                                    <div className="font-medium text-white mb-1 line-clamp-1" title={txn.descriptionRaw}>{txn.descriptionRaw}</div>
-                                    <div className={`text-lg font-bold ${txn.amount > 0 ? "text-green-400" : "text-red-400"}`}>
-                                        ₹{Math.abs(txn.amount).toFixed(2)}
+                            <article key={txn.id} className="bg-term-panel">
+                                {/* The raw statement line stays visible while editing — it is the
+                                    only evidence of what the entry actually was. */}
+                                <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-term-rule px-4 py-3">
+                                    <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
+                                        <span className="term-num text-[11px] text-term-dim">
+                                            {statementDate(txn.txnDate)}
+                                        </span>
+                                        <span className="truncate text-[13px] text-term-text" title={txn.descriptionRaw}>
+                                            {txn.descriptionRaw}
+                                        </span>
+                                        <span className="term-label">{txn.source}</span>
                                     </div>
-                                    <div className="text-xs text-slate-600 uppercase mt-2">{txn.source}</div>
+                                    <span className={`term-num text-[15px] ${txn.amount > 0 ? "text-term-gain" : "text-term-loss"}`}>
+                                        ₹{amount(Math.abs(txn.amount), 2)}
+                                    </span>
                                 </div>
 
-                                {/* Edit Form Area */}
                                 {editingId === txn.id ? (
-                                    <div className="flex-2 grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-                                        <input
-                                            className="input-field py-2 text-sm"
-                                            placeholder="Clean Description"
-                                            value={editForm.descriptionClean || ""}
-                                            onChange={e => setEditForm({ ...editForm, descriptionClean: e.target.value })}
-                                        />
-                                        <input
-                                            className="input-field py-2 text-sm"
-                                            type="number"
-                                            step="0.01"
-                                            placeholder="Amount"
-                                            value={editForm.amount || ""}
-                                            onChange={e => setEditForm({ ...editForm, amount: e.target.value })}
-                                        />
-                                        <AutocompleteInput
-                                            className="input-field py-2 text-sm"
-                                            placeholder="Category"
-                                            value={editForm.category || ""}
-                                            onChange={val => setEditForm({ ...editForm, category: val })}
-                                            suggestions={categorySuggestions}
-                                        />
-                                        <AutocompleteInput
-                                            className="input-field py-2 text-sm"
-                                            placeholder="Account From"
-                                            value={editForm.accountFrom || ""}
-                                            onChange={val => setEditForm({ ...editForm, accountFrom: val })}
-                                            suggestions={accountSuggestions}
-                                        />
-                                        <AutocompleteInput
-                                            className="input-field py-2 text-sm"
-                                            placeholder="Account To"
-                                            value={editForm.accountTo || ""}
-                                            onChange={val => setEditForm({ ...editForm, accountTo: val })}
-                                            suggestions={accountSuggestions}
-                                        />
+                                    <div className="px-4 py-4">
+                                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                            <label className="block">
+                                                <span className="term-label mb-1.5 block">Description</span>
+                                                <input
+                                                    className="term-input py-1.5 text-[12px]"
+                                                    value={editForm.descriptionClean || ""}
+                                                    onChange={e => setEditForm({ ...editForm, descriptionClean: e.target.value })}
+                                                />
+                                            </label>
+                                            <label className="block">
+                                                <span className="term-label mb-1.5 block">Amount</span>
+                                                <input
+                                                    className="term-input term-num py-1.5 text-[12px]"
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={editForm.amount || ""}
+                                                    onChange={e => setEditForm({ ...editForm, amount: e.target.value })}
+                                                />
+                                            </label>
+                                            <label className="block">
+                                                <span className="term-label mb-1.5 block">Category</span>
+                                                <AutocompleteInput
+                                                    className="term-input py-1.5 text-[12px]"
+                                                    placeholder="Food, Transport…"
+                                                    value={editForm.category || ""}
+                                                    onChange={val => setEditForm({ ...editForm, category: val })}
+                                                    suggestions={categorySuggestions}
+                                                />
+                                            </label>
+                                            <label className="block">
+                                                <span className="term-label mb-1.5 block">Account from</span>
+                                                <AutocompleteInput
+                                                    className="term-input py-1.5 font-mono text-[12px]"
+                                                    placeholder="Assets:Banking:HDFCBank"
+                                                    value={editForm.accountFrom || ""}
+                                                    onChange={val => setEditForm({ ...editForm, accountFrom: val })}
+                                                    suggestions={accountSuggestions}
+                                                />
+                                            </label>
+                                            <label className="block">
+                                                <span className="term-label mb-1.5 block">Account to</span>
+                                                <AutocompleteInput
+                                                    className="term-input py-1.5 font-mono text-[12px]"
+                                                    placeholder="Expenses:Food"
+                                                    value={editForm.accountTo || ""}
+                                                    onChange={val => setEditForm({ ...editForm, accountTo: val })}
+                                                    suggestions={accountSuggestions}
+                                                />
+                                            </label>
+                                        </div>
+                                        <div className="mt-4 flex items-center justify-end gap-3">
+                                            <button onClick={() => setEditingId(null)} className="term-btn">
+                                                Cancel
+                                            </button>
+                                            <button onClick={() => handleSave(txn.id)} className="term-btn-accent">
+                                                Save and map
+                                            </button>
+                                        </div>
                                     </div>
                                 ) : (
-                                    <div className="flex-2 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 w-full text-sm">
-                                        <div className="flex flex-col">
-                                            <span className="text-slate-500 text-xs">Description</span>
-                                            <span className="text-slate-300">{txn.descriptionClean || "-"}</span>
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="text-slate-500 text-xs">Category</span>
-                                            <span className="text-slate-300">{txn.category || "-"}</span>
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="text-slate-500 text-xs">Account From</span>
-                                            <span className="text-slate-300">{txn.accountFrom || "-"}</span>
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="text-slate-500 text-xs">Account To</span>
-                                            <span className="text-slate-300">{txn.accountTo || "-"}</span>
+                                    <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 px-4 py-3">
+                                        <dl className="grid flex-1 grid-cols-2 gap-x-8 gap-y-3 sm:grid-cols-4">
+                                            {[
+                                                ["Description", txn.descriptionClean],
+                                                ["Category", txn.category],
+                                                ["Account from", txn.accountFrom],
+                                                ["Account to", txn.accountTo],
+                                            ].map(([label, value]) => (
+                                                <div key={label as string}>
+                                                    <dt className="term-label">{label}</dt>
+                                                    <dd className={`mt-1 truncate text-[12px] ${value ? "text-term-text" : "text-term-dim"}`}>
+                                                        {value || "—"}
+                                                    </dd>
+                                                </div>
+                                            ))}
+                                        </dl>
+                                        <div className="flex items-center gap-3">
+                                            <button onClick={() => handleSkip(txn)} className="term-btn">
+                                                Skip
+                                            </button>
+                                            <button onClick={() => handleEdit(txn)} className="term-btn-accent">
+                                                Map
+                                            </button>
                                         </div>
                                     </div>
                                 )}
-
-                                {/* Actions */}
-                                <div className="flex flex-col gap-2 min-w-[100px]">
-                                    {editingId === txn.id ? (
-                                        <>
-                                            <button onClick={() => handleSave(txn.id)} className="btn-primary py-2 px-4 text-sm w-full">Save & Map</button>
-                                            <button onClick={() => setEditingId(null)} className="py-2 px-4 text-sm text-slate-400 hover:text-white transition-colors">Cancel</button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <button onClick={() => handleEdit(txn)} className="py-2 px-4 rounded-lg border border-white/10 hover:bg-white/5 text-slate-300 text-sm transition-all">
-                                                Edit
-                                            </button>
-                                            <button onClick={() => handleSkip(txn)} className="py-2 px-4 rounded-lg bg-yellow-600/20 hover:bg-yellow-600/30 border border-yellow-600/30 text-yellow-400 text-sm transition-all">
-                                                Skip
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
-
-                            </div>
+                            </article>
                         ))}
-
-                        {transactions.length === 0 && (
-                            <div className="text-center py-20 bg-white/5 rounded-2xl border border-white/10">
-                                <h3 className="text-2xl font-bold text-white mb-2">All Caught Up!</h3>
-                                <p className="text-slate-400">You currently have no unmapped transactions.</p>
-                            </div>
-                        )}
                     </div>
                 )}
             </div>
