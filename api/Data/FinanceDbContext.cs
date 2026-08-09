@@ -19,6 +19,8 @@ namespace api.Data
         public DbSet<HoldingsSnapshot> HoldingsSnapshots { get; set; } = null!;
         public DbSet<Holding> Holdings { get; set; } = null!;
         public DbSet<CostBasisOverride> CostBasisOverrides { get; set; } = null!;
+        public DbSet<TransactionHistoryImport> TransactionHistoryImports { get; set; } = null!;
+        public DbSet<InvestmentTransaction> InvestmentTransactions { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -89,6 +91,53 @@ namespace api.Data
 
                 entity.HasIndex(e => e.SnapshotId);
                 // Drives the per-instrument history view.
+                entity.HasIndex(e => e.Isin);
+            });
+
+            modelBuilder.Entity<TransactionHistoryImport>(entity =>
+            {
+                entity.ToTable("TransactionHistoryImports");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.StatementDate).IsRequired();
+                entity.Property(e => e.SourceFileName).IsRequired();
+                entity.Property(e => e.FileHash).IsRequired().HasMaxLength(64);
+
+                entity.Property(e => e.TotalInvested).HasColumnType(Money);
+                entity.Property(e => e.TotalDividends).HasColumnType(Money);
+
+                entity.HasIndex(e => e.FileHash).IsUnique();
+                // One import per export date; a newer file for that date replaces it.
+                entity.HasIndex(e => e.StatementDate).IsUnique();
+            });
+
+            modelBuilder.Entity<InvestmentTransaction>(entity =>
+            {
+                entity.ToTable("InvestmentTransactions");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.TxnDate).IsRequired();
+                entity.Property(e => e.InstrumentName).IsRequired();
+                entity.Property(e => e.Isin).HasMaxLength(12);
+                entity.Property(e => e.TransactionType).IsRequired();
+                entity.Property(e => e.GroupKey).IsRequired();
+
+                entity.Property(e => e.Amount).HasColumnType(Money);
+                entity.Property(e => e.Quantity).HasColumnType(Money);
+                entity.Property(e => e.UnitPrice).HasColumnType(Money);
+                entity.Property(e => e.Brokerage).HasColumnType(Money);
+                entity.Property(e => e.BalanceQuantity).HasColumnType(Money);
+                entity.Property(e => e.MarketValue).HasColumnType(Money);
+                entity.Property(e => e.BalanceAmount).HasColumnType(Money);
+
+                // Derived from Kind and Amount; there is nothing to store.
+                entity.Ignore(e => e.CostContribution);
+
+                entity.HasOne(e => e.Import)
+                    .WithMany(i => i.Transactions)
+                    .HasForeignKey(e => e.ImportId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => e.ImportId);
+                entity.HasIndex(e => new { e.ImportId, e.TxnDate });
                 entity.HasIndex(e => e.Isin);
             });
 

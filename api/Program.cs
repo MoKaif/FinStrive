@@ -101,6 +101,8 @@ builder.Services.AddScoped<ILedgerWriterService, LedgerWriterService>();
 builder.Services.AddScoped<IImapService, ImapService>();
 builder.Services.AddScoped<IHoldingsStatementParser, HoldingsStatementParser>();
 builder.Services.AddScoped<IHoldingsImportService, HoldingsImportService>();
+builder.Services.AddScoped<ITransactionHistoryParser, TransactionHistoryParser>();
+builder.Services.AddScoped<ITransactionHistoryImportService, TransactionHistoryImportService>();
 
 builder.Services.AddHttpClient<IFMPService, FMPService>();
 

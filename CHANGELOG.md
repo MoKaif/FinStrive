@@ -9,6 +9,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-08-09
+
+### Added
+- Value Research transaction history import. The all-time export carries every
+  purchase, dividend and PPF deposit with its date, which extends the portfolio
+  back over the years that monthly statements cannot reach
+  (`POST /api/holdings/history/import`, plus timeline and transaction endpoints).
+- A "Portfolio since inception" chart plotting cost against value by month. Cost
+  is exact and reconciles with the holdings statement to the paisa; value is a
+  carry-forward reconstruction and is labelled as one on the panel, since the
+  export prices a holding only on the days it was traded.
+- Standing cost corrections now apply to the history too, attributed to the month
+  the instrument was actually bought — so the Tata Capital IPO shows ₹14,996
+  leaving in October 2025 rather than units appearing for free.
+- Two charts the ledger could always have supported: bank balance over time, read
+  from the closing balance on statement rows rather than derived, and where the
+  money came from alongside where it went.
+
+### Fixed
+- **Chart figures were wrong.** The sign of `Amount` carries no meaning in this
+  data — the same account pair appears with both signs, 145 negative and 79
+  positive on `HDFCBank → Expenses:Transport` alone. The charts summed signed
+  amounts while the stat cards summed absolute ones, so one page reported income
+  as both ₹735,693.56 and ₹739,248.44. Direction now comes from the account pair
+  and magnitude is always absolute, in one shared classifier.
+- Over half of all outflow was invisible. ₹503,709 of transfers into investments
+  appeared in no chart, so "where the money went" answered for 45% of spending
+  and "net" was not a cash position. Investing is now its own class.
+- ₹210,007 of inflow went uncounted, including money returning from
+  `Expenses:Family` and refunds booked against `Expenses:Food`. Returns now net
+  off the category they came from instead of vanishing.
+- A `HDFCBank → HDFCBank` self-transfer counted as spending; transfers between
+  your own accounts are now neutral.
+- The daily chart bucketed by UTC but labelled in local time, so IST transactions
+  after midnight landed on the previous day.
+- Time-range filters measured from today, emptying every chart during any gap in
+  importing; they now measure from the most recent transaction.
+
+### Changed
+- "Where the money went" is a ranked bar chart rather than a donut. Eight slices
+  cannot be compared by angle, and the eight-hue palette it needed failed
+  colour-blind separation; one series needs one colour.
+- Chart series use the categorical pair the portfolio already uses. Green and red
+  stay on signed figures in text, where they mean gain and loss.
+
 ## [1.2.0] - 2026-08-03
 
 ### Changed

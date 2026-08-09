@@ -34,7 +34,7 @@ const Navbar = (props: Props) => {
             className="term-focus flex items-center gap-2 py-3 text-[15px] font-semibold tracking-tight text-term-text"
           >
             FinStrive
-            <span className="term-label text-term-accent">v1.2</span>
+            <span className="term-label text-term-accent">v1.3</span>
           </Link>
 
           {isLoggedIn() && (
