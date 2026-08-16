@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- 2026-08-16: The frontend smoke test now renders the real application shell.
+
 ### Fixed
 - Value Research's renamed `Mutual Funds / SIFs` section is recognised in both
   holdings statements and transaction-history exports, including the
