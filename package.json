@@ -1,6 +1,6 @@
 {
     "name": "finstrive-root",
-    "version": "1.0.0",
+    "version": "1.3.0",
     "description": "FinStrive Root Project",
     "scripts": {
         "start": "./run.sh",

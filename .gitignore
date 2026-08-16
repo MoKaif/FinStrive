@@ -49,3 +49,6 @@ frontend/frontend_log.txt
 # containing PAN and demat account numbers; they are archived at runtime and
 # must never be committed.
 api/PortfolioFiles/
+# Local verification harness. Points at private statement files outside the
+# repo and embeds folio numbers in its assertions, so it stays on this machine.
+harness/

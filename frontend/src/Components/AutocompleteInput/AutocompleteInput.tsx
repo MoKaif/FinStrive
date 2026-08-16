@@ -65,12 +65,12 @@ const AutocompleteInput = ({ value, onChange, suggestions, placeholder, classNam
                 }}
             />
             {showSuggestions && filteredSuggestions.length > 0 && (
-                <ul className="absolute z-50 w-full mt-1 bg-background-card border border-white/10 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                <ul className="term-panel absolute z-50 mt-1 max-h-60 w-full overflow-y-auto shadow-lg">
                     {filteredSuggestions.map((suggestion, index) => (
                         <li
                             key={index}
                             onClick={() => handleSelect(suggestion)}
-                            className="px-4 py-2 text-sm text-slate-300 hover:bg-white/5 hover:text-white cursor-pointer transition-colors"
+                            className="cursor-pointer px-3 py-1.5 text-[12px] text-term-muted transition-colors hover:bg-term-raised hover:text-term-text"
                         >
                             {suggestion}
                         </li>

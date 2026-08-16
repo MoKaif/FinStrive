@@ -6,7 +6,7 @@
 
 @layer base {
   body {
-    @apply bg-background-dark text-text-primary font-sans antialiased overflow-x-hidden;
+    @apply bg-term-ink text-term-text font-sans antialiased overflow-x-hidden;
   }
 
   h1,
@@ -15,25 +15,15 @@
   h4,
   h5,
   h6 {
-    @apply font-display tracking-tight text-white;
+    @apply font-display tracking-tight text-term-text;
   }
 }
 
 @layer components {
-  .btn-primary {
-    @apply bg-primary hover:bg-primary-light text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 shadow-lg shadow-primary/30;
-  }
-
-  .glass-card {
-    @apply bg-background-card/80 backdrop-blur-md border border-white/10 rounded-xl shadow-xl;
-  }
-
-  .input-field {
-    @apply w-full bg-background-dark border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all;
-  }
-
-  /* Holdings terminal primitives. Flat surfaces and hairlines, no glass and no
-     nested cards, so a dense table reads as one continuous statement. */
+  /* Terminal primitives. Flat surfaces and hairlines, no glass and no nested
+     cards, so a dense table reads as one continuous statement. Type is small
+     and set in fixed steps; weight and rules carry the hierarchy that size and
+     colour used to. */
   .term-panel {
     @apply bg-term-panel border border-term-rule;
   }
@@ -49,6 +39,65 @@
 
   .term-focus {
     @apply focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-term-accent focus-visible:ring-offset-1 focus-visible:ring-offset-term-ink;
+  }
+
+  /* Controls are hairline rectangles sized to their text. The one accent
+     variant marks the single primary action on a screen; anything else is a
+     ghost button, so nothing shouts. */
+  .term-btn {
+    @apply term-focus inline-flex items-center gap-2 border border-term-rule bg-transparent px-3 py-2
+           text-[12px] leading-none text-term-muted transition-colors
+           hover:border-term-muted/60 hover:text-term-text
+           disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-term-rule disabled:hover:text-term-muted;
+  }
+
+  .term-btn-accent {
+    @apply term-focus inline-flex items-center gap-2 border border-term-accent bg-term-accent/10 px-4 py-2
+           text-[12px] font-medium leading-none text-term-accent transition-colors
+           hover:bg-term-accent/20 disabled:cursor-not-allowed disabled:opacity-40;
+  }
+
+  .term-btn-danger {
+    @apply term-focus inline-flex items-center gap-2 border border-term-rule bg-transparent px-3 py-2
+           text-[12px] leading-none text-term-muted transition-colors
+           hover:border-term-loss/50 hover:text-term-loss disabled:cursor-not-allowed disabled:opacity-40;
+  }
+
+  .term-input {
+    @apply term-focus w-full border border-term-rule bg-term-ink px-3 py-2 text-[13px] text-term-text
+           placeholder:text-term-dim;
+  }
+
+  .term-select {
+    @apply term-num term-focus border border-term-rule bg-term-panel px-3 py-2 text-[12px] text-term-text;
+  }
+
+  /* Section heading inside a panel: a hairline-separated caption bar. */
+  .term-caption {
+    @apply flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-term-rule px-4 py-3;
+  }
+
+  .term-th {
+    @apply term-label whitespace-nowrap px-3 py-2 text-left font-normal;
+  }
+
+  .term-td {
+    @apply whitespace-nowrap px-3 py-2 text-[12px];
+  }
+
+  /* Legacy aliases. Screens that predate the terminal language still reference
+     these three; pointing them at the primitives above keeps the app coherent
+     rather than half-restyled. */
+  .btn-primary {
+    @apply term-btn-accent;
+  }
+
+  .glass-card {
+    @apply term-panel;
+  }
+
+  .input-field {
+    @apply term-input;
   }
 }
 

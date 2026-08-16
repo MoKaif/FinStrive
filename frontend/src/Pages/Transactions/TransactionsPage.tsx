@@ -6,6 +6,7 @@ import PdfImportModal from '../../Components/PdfImportModal/PdfImportModal';
 import ManualTransactionModal from '../../Components/ManualTransactionModal/ManualTransactionModal';
 import { getTransactions, syncEmail } from '../../Services/TransactionService';
 import { Transaction } from '../../Models/Transaction';
+import { toast } from 'react-toastify';
 
 type Props = {};
 
@@ -41,10 +42,10 @@ const TransactionsPage = (props: Props) => {
         try {
             setIsSyncing(true);
             await syncEmail();
-            alert("Email sync initiated! Please refresh in a few seconds.");
+            toast.info("Email sync started. New entries appear in a few seconds.");
             setRefreshKey(prev => prev + 1);
         } catch (error) {
-            alert("Failed to sync email. Check console for details.");
+            toast.error("Could not sync email.");
         } finally {
             setIsSyncing(false);
         }
@@ -52,79 +53,50 @@ const TransactionsPage = (props: Props) => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-background-dark flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p className="text-white text-lg">Loading transactions...</p>
-                </div>
+            <div className="min-h-screen bg-term-ink px-4 pt-24 sm:px-8">
+                <p className="term-label py-20 text-center">Loading transactions…</p>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-background-dark">
-            {/* Hero Section */}
-            <div className="bg-gradient-to-br from-primary/20 via-background-dark to-background-dark border-b border-white/10">
-                <div className="container mx-auto px-4 py-12 pt-28">
-                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8">
-                        <div>
-                            <h1 className="text-4xl md:text-5xl font-bold font-display text-white mb-3">
-                                Transactions
-                            </h1>
-                            <p className="text-slate-400 text-lg">
-                                Track, analyze, and manage your financial transactions
-                            </p>
-                        </div>
-                        <div className="flex gap-4">
-                            <button
-                                onClick={handleSyncEmail}
-                                disabled={isSyncing}
-                                className={`flex items-center gap-2 text-lg px-6 py-3 rounded-lg border border-white/10 text-white transition-all ${isSyncing ? "opacity-50 cursor-not-allowed" : "hover:bg-white/5 active:scale-95"}`}
-                            >
-                                {isSyncing ? "Syncing..." : "Sync Email"}
-                            </button>
-                            <button
-                                onClick={() => setShowImportModal(true)}
-                                className="btn-primary flex items-center gap-2 text-lg px-6 py-3"
-                            >
-                                Import PDF
-                            </button>
-                            <button
-                                onClick={() => setShowManualModal(true)}
-                                className="bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg transition-all flex items-center gap-2"
-                            >
-                                Add Manual
-                            </button>
-                        </div>
+        <div className="min-h-screen bg-term-ink px-4 pb-16 pt-24 text-term-text sm:px-8">
+            <div className="mx-auto max-w-[88rem] space-y-5">
+                <header className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 border-b border-term-rule pb-4">
+                    <div>
+                        <h1 className="font-display text-[28px] font-semibold leading-none tracking-tight text-term-text">
+                            Transactions
+                        </h1>
+                        <p className="mt-2 text-[12px] text-term-muted">
+                            {transactions.length.toLocaleString('en-IN')} entries in the ledger
+                        </p>
                     </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <button onClick={handleSyncEmail} disabled={isSyncing} className="term-btn">
+                            {isSyncing ? 'Syncing…' : 'Sync email'}
+                        </button>
+                        <button onClick={() => setShowImportModal(true)} className="term-btn">
+                            Import PDF
+                        </button>
+                        <button onClick={() => setShowManualModal(true)} className="term-btn-accent">
+                            Add entry
+                        </button>
+                    </div>
+                </header>
 
-                    {/* Statistics Cards */}
-                    <TransactionStats transactions={transactions} />
-                </div>
+                <TransactionStats transactions={transactions} />
+
+                <TransactionCharts transactions={transactions} />
+
+                <TransactionList key={refreshKey} />
             </div>
 
-            {/* Main Content */}
-            <div className="container mx-auto px-4 py-8">
-                {/* Analytics Charts */}
-                <div className="mb-12">
-                    <TransactionCharts transactions={transactions} />
-                </div>
-
-                {/* Transaction List */}
-                <div>
-                    <h2 className="text-2xl font-bold text-white mb-6">All Transactions</h2>
-                    <TransactionList key={refreshKey} />
-                </div>
-            </div>
-
-            {/* Import Modal */}
             <PdfImportModal
                 isOpen={showImportModal}
                 onClose={() => setShowImportModal(false)}
                 onSuccess={handleImportSuccess}
             />
 
-            {/* Manual Transaction Modal */}
             <ManualTransactionModal
                 isOpen={showManualModal}
                 onClose={() => setShowManualModal(false)}

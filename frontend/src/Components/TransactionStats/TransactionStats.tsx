@@ -1,55 +1,43 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Transaction } from '../../Models/Transaction';
+import { classifyAll, totalsFor } from '../../Helpers/Ledger';
+import { rupees, toneFor } from '../../Helpers/Money';
 import axios from 'axios';
 
 interface TransactionStatsProps {
     transactions: Transaction[];
 }
 
-interface StatCardProps {
-    title: string;
+interface StatProps {
+    label: string;
     value: string;
-    subtitle: string;
-    icon: string;
-    color: 'green' | 'red' | 'blue' | 'purple';
+    note: string;
+    tone?: string;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon, color }) => {
-    const colorClasses = {
-        green: 'from-green-500/20 to-green-600/20 border-green-500/30',
-        red: 'from-red-500/20 to-red-600/20 border-red-500/30',
-        blue: 'from-blue-500/20 to-blue-600/20 border-blue-500/30',
-        purple: 'from-purple-500/20 to-purple-600/20 border-purple-500/30',
-    };
+// A figure and its label, separated from its neighbours by a hairline. The cards
+// this replaced were gradient-filled, emoji-headed and scaled on hover, which made
+// four equally important numbers read as four different things.
+const Stat: React.FC<StatProps> = ({ label, value, note, tone = 'text-term-text' }) => (
+    <div className="bg-term-panel px-4 py-4">
+        <p className="term-label">{label}</p>
+        <p className={`term-num mt-2 text-[22px] leading-none ${tone}`}>{value}</p>
+        <p className="mt-2 text-[11px] text-term-dim">{note}</p>
+    </div>
+);
 
-    const iconColorClasses = {
-        green: 'text-green-400',
-        red: 'text-red-400',
-        blue: 'text-blue-400',
-        purple: 'text-purple-400',
-    };
-
-    return (
-        <div className={`glass-card p-6 bg-gradient-to-br ${colorClasses[color]} hover:scale-105 transition-transform duration-300`}>
-            <div className="flex items-start justify-between">
-                <div className="flex-1">
-                    <p className="text-slate-400 text-sm font-medium mb-2">{title}</p>
-                    <h3 className="text-3xl font-bold text-white mb-1">{value}</h3>
-                    <p className="text-slate-500 text-xs">{subtitle}</p>
-                </div>
-                <div className={`text-4xl ${iconColorClasses[color]} opacity-80`}>
-                    {icon}
-                </div>
-            </div>
-        </div>
-    );
-};
-
+/**
+ * All-time totals.
+ *
+ * These used to be worked out here with their own account-matching rules, which
+ * drifted from the ones the charts used: this panel took absolute values while the
+ * charts summed signed ones, so the same page reported income two different ways.
+ * Both now read from the shared classifier.
+ */
 const TransactionStats: React.FC<TransactionStatsProps> = ({ transactions }) => {
     const [apiBalance, setApiBalance] = useState<number | null>(null);
 
     useEffect(() => {
-        // Fetch the balance from API relative to the current origin
         const fetchBalance = async () => {
             try {
                 const response = await axios.get('/api/transactions/balance/hdfc-net');
@@ -62,89 +50,54 @@ const TransactionStats: React.FC<TransactionStatsProps> = ({ transactions }) => 
         fetchBalance();
     }, []);
 
-    const hasClosingBalance = transactions.some(t => t.closingBalance !== undefined && t.closingBalance !== null);
-    const latestClosingBalance = transactions
-        .filter(t => t.closingBalance !== undefined && t.closingBalance !== null)
-        .sort((a, b) => new Date(b.txnDate).getTime() - new Date(a.txnDate).getTime())[0]?.closingBalance;
+    const totals = useMemo(() => totalsFor(classifyAll(transactions)), [transactions]);
 
-    const isExternalCredit = (t: Transaction) => {
-        if (!t.accountTo?.includes('HDFCBank')) return false;
-        if (t.accountFrom?.includes('Income')) return true;
-        if (t.accountFrom?.includes('Softlink')) return true;
-        const desc = t.descriptionRaw?.toLowerCase() ?? '';
-        return desc.includes('salary') || desc.includes('interest') || desc.includes('refund') || desc.includes('reimburse');
-    };
-
-    const isExternalExpense = (t: Transaction) => {
-        if (!t.accountFrom?.includes('HDFCBank')) return false;
-        return (
-            t.accountTo?.includes('Expenses') ||
-            t.accountTo?.includes('Food') ||
-            t.accountTo?.includes('Transport') ||
-            t.accountTo?.includes('Entertainment') ||
-            t.accountTo?.includes('Family') ||
-            t.accountTo?.includes('Uncategorized')
+    // The statement's own closing balance beats anything we can add up.
+    const latestClosingBalance = useMemo(() => {
+        const withBalance = transactions.filter(
+            (t) => t.closingBalance !== undefined && t.closingBalance !== null
         );
-    };
+        if (withBalance.length === 0) return null;
+        return [...withBalance].sort(
+            (a, b) => new Date(b.txnDate).getTime() - new Date(a.txnDate).getTime()
+        )[0].closingBalance ?? null;
+    }, [transactions]);
 
-    // Use API balance if available, otherwise use fallback calculation
-    const currentBalance = apiBalance !== null ? apiBalance : (latestClosingBalance ?? transactions
-        .filter(t => isExternalCredit(t) || isExternalExpense(t))
-        .reduce((balance, t) => {
-            if (isExternalCredit(t)) return balance + Math.abs(t.amount);
-            if (isExternalExpense(t)) return balance - Math.abs(t.amount);
-            return balance;
-        }, 0));
-
-    // Calculate statistics - ONLY count external transactions, not internal transfers
-    const totalIncome = transactions
-        .filter(isExternalCredit)
-        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-    const totalExpenses = transactions
-        .filter(isExternalExpense)
-        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-    const totalTransactions = transactions.length;
-
-    // Average transaction amount (considering all transactions)
-    const averageTransaction = totalTransactions > 0
-        ? transactions.reduce((sum, t) => sum + Math.abs(t.amount), 0) / totalTransactions
-        : 0;
-
-    // Count income and expense transactions
-    const incomeCount = transactions.filter(t => t.accountTo?.includes('HDFCBank')).length;
-    const expenseCount = transactions.filter(t => t.accountFrom?.includes('HDFCBank')).length;
+    const balance = latestClosingBalance ?? apiBalance ?? 0;
+    const balanceNote = latestClosingBalance !== null
+        ? 'last closing balance on a statement'
+        : apiBalance !== null
+            ? 'HDFC Bank net flow'
+            : 'no balance available';
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <StatCard
-                title="Current Balance"
-                value={`₹${currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                subtitle="HDFC Bank net flow"
-                icon="🏦"
-                color="blue"
+        <div className="grid gap-px border border-term-rule bg-term-rule sm:grid-cols-2 lg:grid-cols-4">
+            <Stat
+                label="Balance"
+                value={rupees(balance, 2)}
+                note={balanceNote}
+                tone={toneFor(balance)}
             />
-            <StatCard
-                title="Total Income"
-                value={`₹${totalIncome.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                subtitle={`${incomeCount} transactions`}
-                icon="💰"
-                color="green"
+            <Stat
+                label="Money in"
+                value={rupees(totals.income, 2)}
+                note={`${totals.counts.income} credits, all time`}
+                tone="text-term-gain"
             />
-            <StatCard
-                title="Total Expenses"
-                value={`₹${totalExpenses.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                subtitle={`${expenseCount} transactions`}
-                icon="💸"
-                color="red"
+            <Stat
+                label="Spent"
+                value={rupees(totals.spending, 2)}
+                note={
+                    totals.refunds > 0
+                        ? `net of ${rupees(totals.refunds, 0)} returned`
+                        : `${totals.counts.spending} debits, all time`
+                }
+                tone="text-term-loss"
             />
-            <StatCard
-                title="Total Transactions"
-                value={totalTransactions.toString()}
-                subtitle={`Avg: ₹${averageTransaction.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                icon="📊"
-                color="purple"
+            <Stat
+                label="Invested"
+                value={rupees(totals.investing, 2)}
+                note={`${totals.counts.investing} transfers into holdings`}
             />
         </div>
     );

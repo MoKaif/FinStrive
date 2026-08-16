@@ -9,28 +9,26 @@ interface Props {
 
 const ListPortfolio = ({ portfolioValues, onPortfolioDelete }: Props) => {
   return (
-    <section id="portfolio">
-      <h2 className="mb-3 mt-3 text-3xl font-semibold text-center md:text-4xl">
-        My Portfolio
-      </h2>
-      <div className="relative flex flex-col items-center max-w-5xl mx-auto space-y-10 px-10 mb-5 md:px-6 md:space-y-0 md:space-x-7 md:flex-row">
-        <>
-          {portfolioValues.length > 0 ? (
-            portfolioValues.map((portfolioValue) => {
-              return (
-                <CardPortfolio
-                  portfolioValue={portfolioValue}
-                  onPortfolioDelete={onPortfolioDelete}
-                />
-              );
-            })
-          ) : (
-            <h3 className="mb-3 mt-3 text-xl font-semibold text-center md:text-xl">
-              Your portfolio is empty.
-            </h3>
-          )}
-        </>
+    <section id="portfolio" className="term-panel">
+      <div className="flex items-baseline justify-between border-b border-term-rule px-4 py-3">
+        <h2 className="term-label text-term-muted">Watchlist</h2>
+        <span className="term-num text-[11px] text-term-dim">{portfolioValues.length}</span>
       </div>
+      {portfolioValues.length > 0 ? (
+        <div className="flex flex-wrap gap-px bg-term-rule">
+          {portfolioValues.map((portfolioValue) => (
+            <CardPortfolio
+              key={portfolioValue.symbol}
+              portfolioValue={portfolioValue}
+              onPortfolioDelete={onPortfolioDelete}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="px-4 py-6 text-[13px] text-term-muted">
+          Nothing on the watchlist yet.
+        </p>
+      )}
     </section>
   );
 };

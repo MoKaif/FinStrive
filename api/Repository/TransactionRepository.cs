@@ -31,6 +31,7 @@ namespace api.Repository
 
         public async Task<Transaction> CreateAsync(Transaction transaction)
         {
+            transaction.TxnDate = AsUtc(transaction.TxnDate);
             await _context.Transactions.AddAsync(transaction);
             await _context.SaveChangesAsync();
             return transaction;
@@ -56,6 +57,21 @@ namespace api.Repository
             var existing = await _context.Transactions.FindAsync(id);
             if (existing == null) return null;
 
+            // The date used to be left out here, so editing it looked like it worked
+            // — the request returned 200 — while the row kept its original date.
+            // Only overwrite when the caller actually sent one: callers that patch
+            // the mapping alone (reconciliation) omit it, and writing default(DateTime)
+            // would silently move the transaction to year 1.
+            if (transaction.TxnDate != default)
+            {
+                existing.TxnDate = AsUtc(transaction.TxnDate);
+            }
+
+            if (!string.IsNullOrWhiteSpace(transaction.DescriptionRaw))
+            {
+                existing.DescriptionRaw = transaction.DescriptionRaw;
+            }
+
             existing.Category = transaction.Category;
             existing.DescriptionClean = transaction.DescriptionClean;
             existing.Mapped = transaction.Mapped;
@@ -67,6 +83,15 @@ namespace api.Repository
             await _context.SaveChangesAsync();
             return existing;
         }
+
+        // TxnDate is `timestamp with time zone`, which Npgsql will only accept as UTC.
+        // A client that posts a date without an offset arrives here as Unspecified.
+        private static DateTime AsUtc(DateTime value) => value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Local => value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value, DateTimeKind.Utc),
+        };
 
         public async Task<bool> ExistsAsync(int id)
         {

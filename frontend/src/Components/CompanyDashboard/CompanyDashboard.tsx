@@ -8,13 +8,13 @@ interface Props {
 
 const CompanyDashboard = ({ children, ticker }: Props) => {
   return (
-    <div className="relative md:ml-64 bg-blueGray-100 w-full">
-      <div className="relative pt-20 pb-32 bg-lightBlue-500">
-        <div className="px-4 md:px-6 mx-auto w-full">
-          <div>
-            <div className="flex flex-wrap">{children}</div>
-            <div className="flex flex-wrap">{<Outlet context={ticker} />}</div>
-          </div>
+    <div className="relative w-full bg-term-ink px-4 pb-16 pt-24 sm:px-8 md:ml-56">
+      <div className="max-w-[76rem] space-y-5">
+        <div className="grid gap-px border border-term-rule bg-term-rule sm:grid-cols-2 lg:grid-cols-4">
+          {children}
+        </div>
+        <div className="space-y-5">
+          <Outlet context={ticker} />
         </div>
       </div>
     </div>

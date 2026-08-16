@@ -6,32 +6,23 @@ type Props = {
 const RatioList = ({ config, data }: Props) => {
   const renderedCells = config.map((row: any) => {
     return (
-      <li className="py-6 sm:py-6">
-        <div className="flex items-center space-x-4">
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">
-              {row.label}
-            </p>
-            <p className="text-sm text-gray-500 truncate">
-              <a
-                href="/cdn-cgi/l/email-protection"
-                className="__cf_email__"
-                data-cfemail="17727a767e7b57607e7973646372653974787a"
-              >
-                {row.subTitle && row.subTitle}
-              </a>
-            </p>
-          </div>
-          <div className="inline-flex items-center text-base font-semibold text-gray-900">
-            {row.render(data)}
-          </div>
+      <li key={row.label} className="flex items-baseline gap-6 border-b border-term-rule/60 px-4 py-3 last:border-b-0">
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] text-term-text">{row.label}</p>
+          {/* The subtitle used to be wrapped in a Cloudflare email-obfuscation
+              anchor carried over from a scraped template — it linked nowhere. */}
+          {row.subTitle && (
+            <p className="mt-0.5 text-[11.5px] leading-relaxed text-term-muted">{row.subTitle}</p>
+          )}
         </div>
+        <div className="term-num shrink-0 text-[13px] text-term-text">{row.render(data)}</div>
       </li>
     );
   });
+
   return (
-    <div className="bg-white shadow rounded-lg ml-4 mt-4 mb-4 p-4 sm:p-6 w-full">
-      <ul className="divide-y divide-gray-200">{renderedCells}</ul>
+    <div className="term-panel w-full">
+      <ul>{renderedCells}</ul>
     </div>
   );
 };

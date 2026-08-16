@@ -18,6 +18,12 @@ import {
   importStatement,
   saveCostBasisOverride,
 } from "../../Services/HoldingsService";
+import { PortfolioTimeline } from "../../Models/TransactionHistory";
+import {
+  getPortfolioTimeline,
+  importTransactionHistory,
+} from "../../Services/TransactionHistoryService";
+import PortfolioGrowth from "../../Components/Portfolio/PortfolioGrowth";
 import StatementBar from "../../Components/Portfolio/StatementBar";
 import ReconciliationBlock from "../../Components/Portfolio/ReconciliationBlock";
 import AllocationStrip from "../../Components/Portfolio/AllocationStrip";
@@ -33,18 +39,27 @@ const PortfolioPage: React.FC = () => {
   const [current, setCurrent] = useState<SnapshotDetail | null>(null);
   const [timeline, setTimeline] = useState<TimelinePoint[]>([]);
   const [overrides, setOverrides] = useState<CostBasisOverride[]>([]);
+  const [growth, setGrowth] = useState<PortfolioTimeline | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
+  const [importingHistory, setImportingHistory] = useState(false);
   const [savingRule, setSavingRule] = useState(false);
   // undefined = dialog closed, null = adding, object = editing.
   const [editingRule, setEditingRule] = useState<CostBasisOverride | null | undefined>(undefined);
 
   const loadAll = useCallback(async (snapshotId?: number) => {
-    const [list, points, rules] = await Promise.all([getSnapshots(), getTimeline(), getCostBasisOverrides()]);
+    const [list, points, rules, curve] = await Promise.all([
+      getSnapshots(),
+      getTimeline(),
+      getCostBasisOverrides(),
+      // The history is optional; the rest of the page must load without it.
+      getPortfolioTimeline().catch(() => null),
+    ]);
     setSnapshots(list);
     setTimeline(points);
     setOverrides(rules);
+    setGrowth(curve);
     setCurrent(snapshotId ? await getSnapshot(snapshotId) : await getLatestSnapshot());
   }, []);
 
@@ -77,6 +92,22 @@ const PortfolioPage: React.FC = () => {
       toast.error(error instanceof ImportError ? error.message : "The statement could not be imported.");
     } finally {
       setImporting(false);
+    }
+  };
+
+  const runHistoryImport = async (file: File) => {
+    setImportingHistory(true);
+    try {
+      const result = await importTransactionHistory(file);
+      await loadAll(current?.id);
+
+      const verb = result.outcome === "Replaced" ? "Replaced" : "Imported";
+      toast.success(`${verb} ${result.import.transactionCount} investment transactions.`);
+      result.warnings.forEach((warning) => toast.warn(warning));
+    } catch (error) {
+      toast.error(error instanceof ImportError ? error.message : "The history could not be imported.");
+    } finally {
+      setImportingHistory(false);
     }
   };
 
@@ -144,14 +175,23 @@ const PortfolioPage: React.FC = () => {
         {loading ? (
           <p className="term-label py-20 text-center">Loading…</p>
         ) : !current ? (
-          <section className="term-panel px-8 py-16 text-center">
-            <h2 className="font-display text-[20px] font-semibold text-term-text">No statements yet</h2>
-            <p className="mx-auto mt-3 max-w-md text-[13px] leading-relaxed text-term-muted">
-              Import your monthly Value Research holdings statement. Instruments held across several
-              folios are combined without double-counting, and your standing cost corrections are
-              applied on every import.
-            </p>
-          </section>
+          <>
+            <section className="term-panel px-8 py-16 text-center">
+              <h2 className="font-display text-[20px] font-semibold text-term-text">No statements yet</h2>
+              <p className="mx-auto mt-3 max-w-md text-[13px] leading-relaxed text-term-muted">
+                Import your monthly Value Research holdings statement. Instruments held across several
+                folios are combined without double-counting, and your standing cost corrections are
+                applied on every import.
+              </p>
+            </section>
+
+            {/* The history stands on its own — it needs no statement to be useful. */}
+            <PortfolioGrowth
+              timeline={growth}
+              importing={importingHistory}
+              onFile={runHistoryImport}
+            />
+          </>
         ) : (
           <>
             <ReconciliationBlock
@@ -159,6 +199,12 @@ const PortfolioPage: React.FC = () => {
               onShowAdjustments={() =>
                 document.getElementById("adjustments")?.scrollIntoView({ behavior: "smooth", block: "start" })
               }
+            />
+
+            <PortfolioGrowth
+              timeline={growth}
+              importing={importingHistory}
+              onFile={runHistoryImport}
             />
 
             <div className="grid gap-5 lg:grid-cols-2">

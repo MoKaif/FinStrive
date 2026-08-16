@@ -10,10 +10,10 @@ interface Props {
 
 const CardPortfolio = ({ portfolioValue, onPortfolioDelete }: Props) => {
   return (
-    <div className="flex flex-col w-full p-8 space-y-4 text-center rounded-lg shadow-lg md:w-1/3">
+    <div className="flex min-w-[10rem] flex-1 items-center justify-between gap-4 bg-term-panel px-4 py-3">
       <Link
         to={`/company/${portfolioValue.symbol}/company-profile`}
-        className="pt-6 text-xl font-bold"
+        className="term-num term-focus text-[13px] text-term-text hover:text-term-accent"
       >
         {portfolioValue.symbol}
       </Link>

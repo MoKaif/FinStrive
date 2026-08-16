@@ -1,7 +1,39 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Transaction } from "../../Models/Transaction";
 import { getTransactions, updateTransaction } from "../../Services/TransactionService";
+import { amount, statementDate } from "../../Helpers/Money";
 import ManualTransactionModal from '../ManualTransactionModal/ManualTransactionModal';
+
+/**
+ * Editable category, committed when the field is left rather than on every
+ * keystroke — typing "Groceries" used to send nine PUTs, and whichever one the
+ * server finished last won.
+ */
+const CategoryCell: React.FC<{ value: string; onCommit: (next: string) => void }> = ({ value, onCommit }) => {
+    const [draft, setDraft] = useState(value);
+
+    // Re-sync when the row's own value changes underneath us (refetch, undo).
+    useEffect(() => setDraft(value), [value]);
+
+    const commit = () => {
+        if (draft !== value) onCommit(draft);
+    };
+
+    return (
+        <input
+            type="text"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter') e.currentTarget.blur();
+                if (e.key === 'Escape') setDraft(value);
+            }}
+            placeholder="Uncategorised"
+            className="term-focus w-36 border border-transparent bg-transparent px-1 py-0.5 text-[12px] text-term-text placeholder:text-term-dim hover:border-term-rule focus:border-term-rule"
+        />
+    );
+};
 
 interface TransactionFilters {
     search: string;
@@ -206,249 +238,227 @@ const TransactionList: React.FC = () => {
         URL.revokeObjectURL(url);
     };
 
-    if (loading) return <div className="text-white text-center py-20">Loading transactions...</div>;
-    if (error) return <div className="text-red-500 text-center py-20">{error}</div>;
+    const sortMark = (field: keyof Transaction) =>
+        sortField === field ? (sortDirection === 'asc' ? ' ↑' : ' ↓') : '';
+
+    if (loading) return <p className="term-label py-20 text-center">Loading transactions…</p>;
+    if (error) return <p className="py-20 text-center text-[13px] text-term-loss">{error}</p>;
 
     return (
-        <div className="space-y-6">
-            {/* Header with Search and Actions */}
-            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-                <div className="flex-1 w-full md:w-auto">
+        <section className="term-panel">
+            <div className="term-caption">
+                <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                    <h2 className="text-[13px] font-semibold text-term-text">Ledger</h2>
+                    <span className="term-label">
+                        {paginatedTransactions.length} of {filteredAndSortedTransactions.length} shown
+                    </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
                     <input
                         type="text"
-                        placeholder="Search transactions..."
+                        placeholder="Search…"
                         value={filters.search}
-                        onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                        className="input-field w-full"
+                        onChange={(e) => { setFilters({ ...filters, search: e.target.value }); setCurrentPage(1); }}
+                        className="term-input w-48 py-1.5 text-[12px]"
                     />
-                </div>
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => setShowFilters(!showFilters)}
-                        className="btn-primary"
-                    >
-                        {showFilters ? 'Hide Filters' : 'Show Filters'}
+                    <button onClick={() => setShowFilters(!showFilters)} className="term-btn py-1.5">
+                        {showFilters ? 'Hide filters' : 'Filters'}
                     </button>
-                    <button
-                        onClick={exportToCSV}
-                        className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-all"
-                    >
+                    <button onClick={exportToCSV} className="term-btn py-1.5">
                         Export CSV
                     </button>
                 </div>
             </div>
 
-            {/* Advanced Filters */}
             {showFilters && (
-                <div className="glass-card p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-400 mb-2">Date From</label>
+                <div className="border-b border-term-rule bg-term-raised px-4 py-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        <label className="block">
+                            <span className="term-label mb-1.5 block">Date from</span>
                             <input
                                 type="date"
                                 value={filters.dateFrom}
                                 onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
-                                className="input-field"
+                                className="term-input py-1.5 text-[12px]"
                             />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-400 mb-2">Date To</label>
+                        </label>
+                        <label className="block">
+                            <span className="term-label mb-1.5 block">Date to</span>
                             <input
                                 type="date"
                                 value={filters.dateTo}
                                 onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
-                                className="input-field"
+                                className="term-input py-1.5 text-[12px]"
                             />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-400 mb-2">Category</label>
+                        </label>
+                        <label className="block">
+                            <span className="term-label mb-1.5 block">Category</span>
                             <select
                                 value={filters.category}
                                 onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-                                className="input-field"
+                                className="term-input py-1.5 text-[12px]"
                             >
-                                <option value="">All Categories</option>
+                                <option value="">All</option>
                                 {uniqueCategories.map(cat => (
                                     <option key={cat} value={cat}>{cat}</option>
                                 ))}
                             </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-400 mb-2">Transaction Type</label>
+                        </label>
+                        <label className="block">
+                            <span className="term-label mb-1.5 block">Direction</span>
                             <select
                                 value={filters.transactionType}
                                 onChange={(e) => setFilters({ ...filters, transactionType: e.target.value as any })}
-                                className="input-field"
+                                className="term-input py-1.5 text-[12px]"
                             >
                                 <option value="all">All</option>
-                                <option value="income">Income</option>
-                                <option value="expense">Expense</option>
+                                <option value="income">Into bank</option>
+                                <option value="expense">Out of bank</option>
                             </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-400 mb-2">Min Amount</label>
+                        </label>
+                        <label className="block">
+                            <span className="term-label mb-1.5 block">Min amount</span>
                             <input
                                 type="number"
                                 placeholder="0"
                                 value={filters.amountMin}
                                 onChange={(e) => setFilters({ ...filters, amountMin: e.target.value })}
-                                className="input-field"
+                                className="term-input py-1.5 text-[12px]"
                             />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-400 mb-2">Max Amount</label>
+                        </label>
+                        <label className="block">
+                            <span className="term-label mb-1.5 block">Max amount</span>
                             <input
                                 type="number"
-                                placeholder="∞"
+                                placeholder="No limit"
                                 value={filters.amountMax}
                                 onChange={(e) => setFilters({ ...filters, amountMax: e.target.value })}
-                                className="input-field"
+                                className="term-input py-1.5 text-[12px]"
                             />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-400 mb-2">Source</label>
+                        </label>
+                        <label className="block">
+                            <span className="term-label mb-1.5 block">Source</span>
                             <select
                                 value={filters.source}
                                 onChange={(e) => setFilters({ ...filters, source: e.target.value as any })}
-                                className="input-field"
+                                className="term-input py-1.5 text-[12px]"
                             >
-                                <option value="all">All Sources</option>
+                                <option value="all">All</option>
                                 <option value="pdf">PDF</option>
                                 <option value="ledger">Ledger</option>
                             </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-400 mb-2">Status</label>
+                        </label>
+                        <label className="block">
+                            <span className="term-label mb-1.5 block">Status</span>
                             <select
                                 value={filters.mapped}
                                 onChange={(e) => setFilters({ ...filters, mapped: e.target.value as any })}
-                                className="input-field"
+                                className="term-input py-1.5 text-[12px]"
                             >
                                 <option value="all">All</option>
                                 <option value="mapped">Mapped</option>
                                 <option value="unmapped">Unmapped</option>
                             </select>
-                        </div>
+                        </label>
                     </div>
                     <div className="mt-4 flex justify-end">
-                        <button
-                            onClick={resetFilters}
-                            className="text-slate-400 hover:text-white transition-colors"
-                        >
-                            Reset Filters
+                        <button onClick={resetFilters} className="term-btn py-1.5">
+                            Reset
                         </button>
                     </div>
                 </div>
             )}
 
-            {/* Results Summary */}
-            <div className="text-slate-400 text-sm">
-                Showing {paginatedTransactions.length} of {filteredAndSortedTransactions.length} transactions
-            </div>
-
-            {/* Transaction Table */}
-            <div className="glass-card overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-white/10">
-                        <thead className="bg-white/5">
-                            <tr>
-                                <th
-                                    onClick={() => handleSort('txnDate')}
-                                    className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider cursor-pointer hover:text-white"
-                                >
-                                    Date {sortField === 'txnDate' && (sortDirection === 'asc' ? '↑' : '↓')}
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                                    Description
-                                </th>
-                                <th
-                                    onClick={() => handleSort('amount')}
-                                    className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider cursor-pointer hover:text-white"
-                                >
-                                    Amount {sortField === 'amount' && (sortDirection === 'asc' ? '↑' : '↓')}
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                                    Category
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                                    Source
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                                    Status
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                                    Actions
-                                </th>
+            <div className="overflow-x-auto">
+                <table className="min-w-full border-collapse">
+                    <thead>
+                        <tr className="border-b border-term-rule bg-term-raised">
+                            <th
+                                onClick={() => handleSort('txnDate')}
+                                className="term-th cursor-pointer hover:text-term-text"
+                            >
+                                Date{sortMark('txnDate')}
+                            </th>
+                            <th className="term-th">Description</th>
+                            <th
+                                onClick={() => handleSort('amount')}
+                                className="term-th cursor-pointer text-right hover:text-term-text"
+                            >
+                                Amount ₹{sortMark('amount')}
+                            </th>
+                            <th className="term-th">Category</th>
+                            <th className="term-th">Source</th>
+                            <th className="term-th">Status</th>
+                            <th className="term-th text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {paginatedTransactions.map((txn) => (
+                            <tr key={txn.id} className="border-b border-term-rule/60 hover:bg-term-raised">
+                                <td className="term-td term-num text-term-muted">
+                                    {statementDate(txn.txnDate)}
+                                </td>
+                                <td className="term-td max-w-md truncate whitespace-normal text-term-text">
+                                    {txn.descriptionClean || txn.descriptionRaw}
+                                </td>
+                                <td className={`term-td term-num text-right ${txn.amount > 0 ? 'text-term-gain' : 'text-term-loss'}`}>
+                                    {amount(Math.abs(txn.amount), 2)}
+                                </td>
+                                <td className="term-td">
+                                    <CategoryCell
+                                        value={txn.category || ''}
+                                        onCommit={(next) => handleCategoryChange(txn.id, next)}
+                                    />
+                                </td>
+                                <td className="term-td term-label">{txn.source}</td>
+                                <td className="term-td">
+                                    <span className={`term-num text-[11px] ${txn.mapped ? 'text-term-gain' : 'text-term-accent'}`}>
+                                        {txn.mapped ? 'mapped' : 'unmapped'}
+                                    </span>
+                                </td>
+                                <td className="term-td text-right">
+                                    <div className="flex justify-end gap-2">
+                                        <button
+                                            onClick={async () => {
+                                                // Mark skipped and remove from UI
+                                                const original = transactions.find(t => t.id === txn.id);
+                                                try {
+                                                    await updateTransaction(txn.id, { skipped: true, mapped: true });
+                                                    setTransactions(prev => prev.filter(t => t.id !== txn.id));
+                                                } catch (err) {
+                                                    setError('Failed to skip transaction');
+                                                    if (original) setTransactions(prev => prev.map(t => t.id === original.id ? original : t));
+                                                }
+                                            }}
+                                            className="term-focus text-[11px] text-term-muted hover:text-term-accent"
+                                        >
+                                            Skip
+                                        </button>
+                                        <span className="text-term-rule">|</span>
+                                        <button
+                                            onClick={() => {
+                                                setEditingTxn(txn);
+                                                setShowEditModal(true);
+                                            }}
+                                            className="term-focus text-[11px] text-term-muted hover:text-term-text"
+                                        >
+                                            Edit
+                                        </button>
+                                    </div>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/10">
-                            {paginatedTransactions.map((txn) => (
-                                <tr key={txn.id} className="hover:bg-white/5 transition-colors">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
-                                        {new Date(txn.txnDate).toLocaleDateString('en-IN')}
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-white max-w-xs truncate">
-                                        {txn.descriptionClean || txn.descriptionRaw}
-                                    </td>
-                                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${txn.amount > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                        ₹{Math.abs(txn.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                        <input
-                                            type="text"
-                                            value={txn.category || ''}
-                                            onChange={(e) => handleCategoryChange(txn.id, e.target.value)}
-                                            className="bg-white/5 border border-white/10 rounded px-2 py-1 text-white text-sm w-full focus:outline-none focus:ring-2 focus:ring-primary"
-                                            placeholder="Uncategorized"
-                                        />
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
-                                        <span className="px-2 py-1 rounded-full bg-white/10 text-xs">
-                                            {txn.source}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                        <span className={`px-2 py-1 rounded-full text-xs ${txn.mapped ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                                            {txn.mapped ? 'Mapped' : 'Unmapped'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={async () => {
-                                                    // Mark skipped and remove from UI
-                                                    const original = transactions.find(t => t.id === txn.id);
-                                                    try {
-                                                        await updateTransaction(txn.id, { skipped: true, mapped: true });
-                                                        setTransactions(prev => prev.filter(t => t.id !== txn.id));
-                                                    } catch (err) {
-                                                        setError('Failed to skip transaction');
-                                                        if (original) setTransactions(prev => prev.map(t => t.id === original.id ? original : t));
-                                                    }
-                                                }}
-                                                className="text-xs px-3 py-1 rounded bg-yellow-600/20 text-yellow-400 hover:bg-yellow-600/30"
-                                            >
-                                                Skip
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    setEditingTxn(txn);
-                                                    setShowEditModal(true);
-                                                }}
-                                                className="text-xs px-3 py-1 rounded bg-white/5 text-slate-300 hover:bg-white/10"
-                                            >
-                                                Edit
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                        ))}
+                        {paginatedTransactions.length === 0 && (
+                            <tr>
+                                <td colSpan={7} className="px-4 py-12 text-center text-[13px] text-term-muted">
+                                    Nothing matches these filters.
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
             </div>
 
-            {/* Edit Modal */}
             <ManualTransactionModal
                 isOpen={showEditModal}
                 onClose={() => { setShowEditModal(false); setEditingTxn(null); }}
@@ -456,44 +466,43 @@ const TransactionList: React.FC = () => {
                 existing={editingTxn}
             />
 
-            {/* Pagination */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                    <label className="text-slate-400 text-sm">Rows per page:</label>
+            <div className="flex flex-wrap items-center justify-between gap-4 border-t border-term-rule px-4 py-3">
+                <label className="flex items-center gap-2">
+                    <span className="term-label">Rows</span>
                     <select
                         value={pageSize}
                         onChange={(e) => {
                             setPageSize(Number(e.target.value));
                             setCurrentPage(1);
                         }}
-                        className="bg-white/5 border border-white/10 rounded px-3 py-1 text-white text-sm"
+                        className="term-select py-1"
                     >
                         <option value={20}>20</option>
                         <option value={50}>50</option>
                         <option value={100}>100</option>
                     </select>
-                </div>
-                <div className="flex items-center gap-2">
+                </label>
+                <div className="flex items-center gap-3">
                     <button
                         onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                         disabled={currentPage === 1}
-                        className="px-4 py-2 rounded-lg bg-white/5 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/10 transition-colors"
+                        className="term-btn py-1.5"
                     >
                         Previous
                     </button>
-                    <span className="text-slate-400 text-sm">
-                        Page {currentPage} of {totalPages}
+                    <span className="term-num text-[12px] text-term-muted">
+                        {currentPage} / {Math.max(totalPages, 1)}
                     </span>
                     <button
                         onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                        disabled={currentPage === totalPages}
-                        className="px-4 py-2 rounded-lg bg-white/5 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/10 transition-colors"
+                        disabled={currentPage >= totalPages}
+                        className="term-btn py-1.5"
                     >
                         Next
                     </button>
                 </div>
             </div>
-        </div>
+        </section>
     );
 };
 

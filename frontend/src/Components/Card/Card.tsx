@@ -17,20 +17,21 @@ const Card: React.FC<Props> = ({
 }: Props): JSX.Element => {
   return (
     <div
-      className="flex flex-col items-center justify-between w-full p-6 bg-slate-100 rounded-lg md:flex-row"
+      className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 bg-term-panel px-4 py-3"
       key={id}
       id={id}
     >
       <Link
         to={`/company/${searchResult.symbol}/company-profile`}
-        className="font-bold text-center text-veryDarkViolet md:text-left"
+        className="term-focus min-w-0 flex-1 truncate text-[13px] text-term-text hover:text-term-accent"
       >
-        {searchResult.name} ({searchResult.symbol})
+        {searchResult.name}{" "}
+        <span className="term-num text-[12px] text-term-dim">{searchResult.symbol}</span>
       </Link>
-      <p className="text-veryDarkBlue">{searchResult.currency}</p>
-      <p className="font-bold text-veryDarkBlue">
-        {searchResult.exchangeShortName} - {searchResult.stockExchange}
-      </p>
+      <span className="term-label">{searchResult.currency}</span>
+      <span className="term-label w-40 truncate" title={searchResult.stockExchange}>
+        {searchResult.exchangeShortName}
+      </span>
       <AddPortfolio
         onPortfolioCreate={onPortfolioCreate}
         symbol={searchResult.symbol}
