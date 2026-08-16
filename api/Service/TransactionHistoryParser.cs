@@ -300,7 +300,10 @@ namespace api.Service
             var key = Normalize(text)?.Replace(" / ", "/").Replace(" & ", " & ");
             return key switch
             {
-                "mutual funds" or "mutual fund" => AssetClass.MutualFund,
+                // Newer exports call this section "Mutual Funds / SIFs" in the
+                // banner and "Mutual Funds & SIFs" in the worksheet tab.
+                "mutual funds" or "mutual fund" or "mutual funds/sifs" or "mutual funds & sifs"
+                    => AssetClass.MutualFund,
                 "stocks & etfs" or "stocks and etfs" or "stocks &amp; etfs" or "equity & etfs"
                     => AssetClass.StockOrEtf,
                 "reits/invits" or "reits & invits" or "reits and invits" or "reits &amp; invits"

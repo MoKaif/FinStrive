@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Value Research's renamed `Mutual Funds / SIFs` section is recognised in both
+  holdings statements and transaction-history exports, including the
+  `Mutual Funds & SIFs` worksheet-tab variant. Mutual-fund rows are no longer
+  skipped when importing exports generated after the August 2026 format change.
+
 ## [1.3.0] - 2026-08-09
 
 ### Added

@@ -257,7 +257,11 @@ namespace api.Service
 
         private static AssetClass? MatchSectionBanner(string? text) => Normalize(text) switch
         {
-            "mutual funds" or "mutual fund" => AssetClass.MutualFund,
+            // Value Research added SIFs to this section in August 2026. Keep the
+            // previous labels too so statements exported before the rename remain
+            // importable.
+            "mutual funds" or "mutual fund" or "mutual funds / sifs" or "mutual funds & sifs"
+                => AssetClass.MutualFund,
             "stocks & etfs" or "stocks and etfs" or "stocks &amp; etfs" or "equity & etfs" => AssetClass.StockOrEtf,
             "reits & invits" or "reits and invits" or "reits / invits" or "reits &amp; invits" => AssetClass.ReitInvit,
             "ppf" or "public provident fund" => AssetClass.Ppf,
