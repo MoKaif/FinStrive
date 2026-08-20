@@ -63,11 +63,11 @@ const TransactionStats: React.FC<TransactionStatsProps> = ({ transactions }) => 
         )[0].closingBalance ?? null;
     }, [transactions]);
 
-    const balance = latestClosingBalance ?? apiBalance ?? 0;
-    const balanceNote = latestClosingBalance !== null
-        ? 'last closing balance on a statement'
-        : apiBalance !== null
-            ? 'HDFC Bank net flow'
+    const balance = apiBalance ?? latestClosingBalance ?? 0;
+    const balanceNote = apiBalance !== null
+        ? 'HDFC Bank net flow'
+        : latestClosingBalance !== null
+            ? 'last closing balance on a statement'
             : 'no balance available';
 
     return (
