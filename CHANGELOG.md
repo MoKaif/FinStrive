@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- 2026-08-19: The frontend README now accurately describes the FinStrive user
+  interface.
 - 2026-08-16: The frontend smoke test now renders the real application shell.
 
 ### Fixed
