@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 using api.Data;
 using api.Interfaces;
@@ -41,6 +43,30 @@ namespace api.Repository
         {
             return await _context.Transactions
                 .AnyAsync(t => t.Source == source && t.SourceRef == sourceRef);
+        }
+
+        public async Task<bool> ExistsByAnySourceRefAsync(IEnumerable<string> sourceRefs)
+        {
+            var candidates = sourceRefs
+                .Where(reference => !string.IsNullOrWhiteSpace(reference))
+                .Distinct()
+                .ToList();
+
+            if (candidates.Count == 0) return false;
+
+            return await _context.Transactions
+                .AnyAsync(t => t.SourceRef != null && candidates.Contains(t.SourceRef));
+        }
+
+        public async Task<List<Transaction>> GetByDateAndAmountAsync(DateTime txnDate, decimal amount)
+        {
+            var start = AsUtc(txnDate.Date);
+            var end = start.AddDays(1);
+            var magnitude = Math.Abs(amount);
+
+            return await _context.Transactions
+                .Where(t => t.TxnDate >= start && t.TxnDate < end && Math.Abs(t.Amount) == magnitude)
+                .ToListAsync();
         }
 
         public async Task<List<Transaction>> GetByMappedStatusAsync(bool isMapped)

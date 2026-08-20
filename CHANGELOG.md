@@ -9,7 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- HDFC transaction-alert email sync. FinStrive can scan recent IMAP messages,
+  parse UPI credits, UPI debits and debit-card purchases, and create unmapped
+  reconciliation candidates from the matching bank alerts.
+- Mailbox scan actions on both the reconciliation and transaction pages, plus a
+  lookback-aware API endpoint for scheduled clients such as Orion Treasurer.
+
+### Changed
+- Transaction references are normalised across statement and email imports so
+  left-zero-padded UPI references resolve to the same transaction.
+
 ### Fixed
+- Email and statement imports now share reference-based duplicate detection,
+  preventing scheduled mailbox scans from recreating transactions already read
+  from a statement or an earlier alert.
 - Value Research's renamed `Mutual Funds / SIFs` section is recognised in both
   holdings statements and transaction-history exports, including the
   `Mutual Funds & SIFs` worksheet-tab variant. Mutual-fund rows are no longer

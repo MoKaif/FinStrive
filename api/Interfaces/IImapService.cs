@@ -1,9 +1,10 @@
 using System.Threading.Tasks;
+using api.Dtos.Portfolio;
 
 namespace api.Interfaces
 {
     public interface IImapService
     {
-        Task CheckEmailsAsync();
+        Task<EmailTransactionSyncResult> CheckEmailsAsync(int? lookbackDays = null);
     }
 }

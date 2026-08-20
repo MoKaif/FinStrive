@@ -4,6 +4,14 @@ import { Transaction } from "../Models/Transaction";
 const API_Base = "/api/transactions";
 const API_Import = "/api/import";
 
+export type EmailSyncResult = {
+    scanned: number;
+    matched: number;
+    created: number;
+    duplicates: number;
+    ignored: number;
+};
+
 export const importPdf = async (file: File) => {
     try {
         const formData = new FormData();
@@ -51,7 +59,7 @@ export const createTransaction = async (transaction: Omit<Transaction, 'id'>) =>
 }
 export const syncEmail = async () => {
     try {
-        const response = await axios.post(`${API_Base}/sync-imap`);
+        const response = await axios.post<EmailSyncResult>(`${API_Base}/sync-email-transactions`);
         return response.data;
     } catch (error) {
         console.error("Error syncing email", error);

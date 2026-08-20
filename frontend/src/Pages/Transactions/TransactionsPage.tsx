@@ -41,8 +41,12 @@ const TransactionsPage = (props: Props) => {
     const handleSyncEmail = async () => {
         try {
             setIsSyncing(true);
-            await syncEmail();
-            toast.info("Email sync started. New entries appear in a few seconds.");
+            const result = await syncEmail();
+            if (result.created > 0) {
+                toast.success(`${result.created} new ${result.created === 1 ? 'transaction' : 'transactions'} ready to reconcile.`);
+            } else {
+                toast.info(`No new transactions. ${result.duplicates} already imported.`);
+            }
             setRefreshKey(prev => prev + 1);
         } catch (error) {
             toast.error("Could not sync email.");
@@ -73,7 +77,7 @@ const TransactionsPage = (props: Props) => {
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                         <button onClick={handleSyncEmail} disabled={isSyncing} className="term-btn">
-                            {isSyncing ? 'Syncing…' : 'Sync email'}
+                            {isSyncing ? 'Scanning…' : 'Scan transaction emails'}
                         </button>
                         <button onClick={() => setShowImportModal(true)} className="term-btn">
                             Import PDF

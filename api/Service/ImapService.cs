@@ -1,89 +1,159 @@
 using System;
-using System.IO;
+using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using api.Dtos.Portfolio;
+using api.Helpers;
 using api.Interfaces;
+using api.Models;
 using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Search;
 using Microsoft.Extensions.Configuration;
-using MimeKit;
+using Microsoft.Extensions.Logging;
 
 namespace api.Service
 {
     public class ImapService : IImapService
     {
         private readonly IConfiguration _config;
-        private readonly IPdfService _pdfService;
+        private readonly ITransactionRepository _transactionRepository;
+        private readonly HdfcTransactionEmailParser _parser;
+        private readonly ILogger<ImapService> _logger;
 
-        public ImapService(IConfiguration config, IPdfService pdfService)
+        public ImapService(
+            IConfiguration config,
+            ITransactionRepository transactionRepository,
+            HdfcTransactionEmailParser parser,
+            ILogger<ImapService> logger)
         {
             _config = config;
-            _pdfService = pdfService;
+            _transactionRepository = transactionRepository;
+            _parser = parser;
+            _logger = logger;
         }
 
-        public async Task CheckEmailsAsync()
+        public async Task<EmailTransactionSyncResult> CheckEmailsAsync(int? lookbackDays = null)
         {
             var email = _config["GmailAddress"];
             var password = _config["GoogleAppKey"];
-            var customerId = _config["CustomerID"]; // Used as PDF password
 
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
             {
-                Console.WriteLine("IMAP Credentials missing.");
-                // Log or return
-                return;
+                throw new InvalidOperationException("IMAP credentials are missing.");
             }
+
+            var configuredLookback = _config.GetValue("TransactionEmailLookbackDays", 90);
+            var effectiveLookback = Math.Clamp(lookbackDays ?? configuredLookback, 1, 90);
+            var result = new EmailTransactionSyncResult();
 
             try
             {
-                using (var client = new ImapClient())
+                using var client = new ImapClient();
+                await client.ConnectAsync("imap.gmail.com", 993, true);
+                await client.AuthenticateAsync(email, password);
+
+                var inbox = client.Inbox;
+                await inbox.OpenAsync(FolderAccess.ReadOnly);
+
+                var query = SearchQuery.And(
+                    SearchQuery.DeliveredAfter(DateTime.UtcNow.AddDays(-effectiveLookback)),
+                    SearchQuery.FromContains("hdfcbank"));
+
+                var uids = await inbox.SearchAsync(query);
+                result.Scanned = uids.Count;
+
+                foreach (var uid in uids)
                 {
-                    Console.WriteLine($"Attempting to connect to Gmail IMAP with email: {email}");
-                    await client.ConnectAsync("imap.gmail.com", 993, true);
-                    await client.AuthenticateAsync(email, password);
+                    var message = await inbox.GetMessageAsync(uid);
+                    var body = GetReadableBody(message.TextBody, message.HtmlBody);
+                    var transaction = _parser.Parse(message.Subject ?? string.Empty, body, message.MessageId);
 
-                    var inbox = client.Inbox;
-                    await inbox.OpenAsync(FolderAccess.ReadOnly);
-
-                    // Search for last 30 days to avoid fetching full history every time
-                    var query = SearchQuery.And(
-                        SearchQuery.DeliveredAfter(DateTime.Now.AddDays(-30)),
-                        SearchQuery.And(
-                            SearchQuery.FromContains("alerts@hdfcbank.bank.in"), // Changed to .net based on user request but typically it is hdfcbank.net
-                            SearchQuery.SubjectContains("Account Statement")
-                        )
-                    );
-
-                    // User said <alerts@hdfcbank.bank.in> explicitly.
-
-                    var uids = await inbox.SearchAsync(query);
-
-                    foreach (var uid in uids)
+                    if (transaction == null)
                     {
-                        var message = await inbox.GetMessageAsync(uid);
-
-                        foreach (var attachment in message.Attachments)
-                        {
-                            if (attachment is MimePart part && part.FileName.Contains("Account Statement.pdf"))
-                            {
-                                using (var stream = new MemoryStream())
-                                {
-                                    await part.Content.DecodeToAsync(stream);
-                                    stream.Position = 0;
-                                    await _pdfService.ImportPdfAsync(stream, customerId);
-                                }
-                            }
-                        }
+                        result.Ignored++;
+                        continue;
                     }
 
-                    await client.DisconnectAsync(true);
+                    result.Matched++;
+                    if (await IsDuplicateAsync(transaction))
+                    {
+                        result.Duplicates++;
+                        continue;
+                    }
+
+                    await _transactionRepository.CreateAsync(transaction);
+                    result.Created++;
                 }
+
+                await client.DisconnectAsync(true);
+                return result;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"IMAP Error: {ex.Message}");
+                _logger.LogError(ex, "Failed to scan HDFC transaction emails");
+                throw;
             }
+        }
+
+        private async Task<bool> IsDuplicateAsync(Transaction transaction)
+        {
+            var hasBankReference = !string.IsNullOrWhiteSpace(transaction.SourceRef) &&
+                                   !transaction.SourceRef.StartsWith("email:", StringComparison.OrdinalIgnoreCase);
+
+            if (!string.IsNullOrWhiteSpace(transaction.SourceRef) &&
+                await _transactionRepository.ExistsByAnySourceRefAsync(
+                    TransactionReference.Candidates(transaction.SourceRef)))
+            {
+                return true;
+            }
+
+            if (hasBankReference) return false;
+
+            // Debit-card alerts do not include the bank transaction reference. Match
+            // those against an existing statement row by date, amount and merchant.
+            var sameAmountAndDate = await _transactionRepository.GetByDateAndAmountAsync(
+                transaction.TxnDate,
+                transaction.Amount);
+
+            return sameAmountAndDate.Any(existing =>
+                CounterpartiesOverlap(transaction.DescriptionClean, existing.DescriptionRaw) ||
+                CounterpartiesOverlap(transaction.DescriptionClean, existing.DescriptionClean));
+        }
+
+        private static bool CounterpartiesOverlap(string? expected, string? candidate)
+        {
+            var expectedTokens = Tokens(expected);
+            var candidateTokens = Tokens(candidate);
+            if (expectedTokens.Count == 0 || candidateTokens.Count == 0) return false;
+
+            return expectedTokens.Any(left => candidateTokens.Any(right =>
+                left.Equals(right, StringComparison.OrdinalIgnoreCase) ||
+                (left.Length >= 5 && right.Length >= 5 &&
+                 (left.StartsWith(right, StringComparison.OrdinalIgnoreCase) ||
+                  right.StartsWith(left, StringComparison.OrdinalIgnoreCase)))));
+        }
+
+        private static List<string> Tokens(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return new List<string>();
+
+            return Regex.Split(value.ToUpperInvariant(), @"[^A-Z0-9]+")
+                .Where(token => token.Length >= 4)
+                .Where(token => token is not "DEBIT" and not "CREDIT" and not "FROM" and not "TRANSACTION")
+                .Distinct()
+                .ToList();
+        }
+
+        private static string GetReadableBody(string? textBody, string? htmlBody)
+        {
+            if (!string.IsNullOrWhiteSpace(textBody)) return textBody;
+            if (string.IsNullOrWhiteSpace(htmlBody)) return string.Empty;
+
+            var withoutTags = Regex.Replace(htmlBody, "<[^>]+>", " ");
+            return WebUtility.HtmlDecode(Regex.Replace(withoutTags, @"\s+", " "));
         }
     }
 }

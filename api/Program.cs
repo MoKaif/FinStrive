@@ -99,6 +99,7 @@ builder.Services.AddScoped<ILedgerService, LedgerService>();
 builder.Services.AddScoped<IPdfService, PdfService>();
 builder.Services.AddScoped<ILedgerWriterService, LedgerWriterService>();
 builder.Services.AddScoped<IImapService, ImapService>();
+builder.Services.AddSingleton<HdfcTransactionEmailParser>();
 builder.Services.AddScoped<IHoldingsStatementParser, HoldingsStatementParser>();
 builder.Services.AddScoped<IHoldingsImportService, HoldingsImportService>();
 builder.Services.AddScoped<ITransactionHistoryParser, TransactionHistoryParser>();
