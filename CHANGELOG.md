@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Transaction references are normalised across statement and email imports so
   left-zero-padded UPI references resolve to the same transaction.
+### Changed
+- 2026-08-16: The frontend smoke test now renders the real application shell.
 
 ### Fixed
 - Email and statement imports now share reference-based duplicate detection,
