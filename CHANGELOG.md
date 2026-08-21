@@ -20,12 +20,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Transaction references are normalised across statement and email imports so
   left-zero-padded UPI references resolve to the same transaction.
 ### Changed
+- 2026-08-19: The frontend README now accurately describes the FinStrive user
+  interface.
 - 2026-08-16: The frontend smoke test now renders the real application shell.
 
 ### Fixed
 - Email and statement imports now share reference-based duplicate detection,
   preventing scheduled mailbox scans from recreating transactions already read
   from a statement or an earlier alert.
+- 2026-08-17: Unauthorized frontend responses now show the login prompt and
+  navigate to the login page instead of displaying the raw response body.
 - Value Research's renamed `Mutual Funds / SIFs` section is recognised in both
   holdings statements and transaction-history exports, including the
   `Mutual Funds & SIFs` worksheet-tab variant. Mutual-fund rows are no longer
