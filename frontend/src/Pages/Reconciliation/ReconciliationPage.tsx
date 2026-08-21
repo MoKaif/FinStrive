@@ -3,6 +3,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { amount, statementDate } from "../../Helpers/Money";
 import AutocompleteInput from "../../Components/AutocompleteInput/AutocompleteInput";
+import { syncEmail } from "../../Services/TransactionService";
 
 type Transaction = {
     id: number;
@@ -30,6 +31,7 @@ const ReconciliationPage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [editForm, setEditForm] = useState<TransactionEditForm>({});
+    const [isScanningInbox, setIsScanningInbox] = useState(false);
 
     // Suggestions State
     const [categorySuggestions, setCategorySuggestions] = useState<string[]>([]);
@@ -73,6 +75,27 @@ const ReconciliationPage = () => {
             setAccountSuggestions(accounts);
         } catch (error) {
             console.error("Failed to fetch suggestions", error);
+        }
+    };
+
+    const handleScanInbox = async () => {
+        try {
+            setIsScanningInbox(true);
+            const result = await syncEmail();
+            await fetchUnmappedTransactions();
+
+            if (result.created > 0) {
+                toast.success(
+                    `${result.created} ${result.created === 1 ? "transaction" : "transactions"} added for reconciliation.`
+                );
+            } else {
+                toast.info(`No new transactions. ${result.duplicates} already imported.`);
+            }
+        } catch (error) {
+            console.error("Failed to scan transaction emails", error);
+            toast.error("Could not scan HDFC transaction emails.");
+        } finally {
+            setIsScanningInbox(false);
         }
     };
 
@@ -144,15 +167,24 @@ const ReconciliationPage = () => {
     return (
         <div className="min-h-screen bg-term-ink px-4 pb-16 pt-24 text-term-text sm:px-8">
             <div className="mx-auto max-w-[88rem] space-y-5">
-                <header className="border-b border-term-rule pb-4">
-                    <h1 className="font-display text-[28px] font-semibold leading-none tracking-tight text-term-text">
-                        Reconciliation
-                    </h1>
-                    <p className="mt-2 text-[12px] text-term-muted">
-                        {isLoading
-                            ? "Loading…"
-                            : `${transactions.length} ${transactions.length === 1 ? "entry" : "entries"} still to map`}
-                    </p>
+                <header className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 border-b border-term-rule pb-4">
+                    <div>
+                        <h1 className="font-display text-[28px] font-semibold leading-none tracking-tight text-term-text">
+                            Reconciliation
+                        </h1>
+                        <p className="mt-2 text-[12px] text-term-muted">
+                            {isLoading
+                                ? "Loading…"
+                                : `${transactions.length} ${transactions.length === 1 ? "entry" : "entries"} still to map`}
+                        </p>
+                    </div>
+                    <button
+                        onClick={handleScanInbox}
+                        disabled={isScanningInbox}
+                        className="term-btn-accent"
+                    >
+                        {isScanningInbox ? "Scanning inbox…" : "Scan transaction emails"}
+                    </button>
                 </header>
 
                 {isLoading ? (

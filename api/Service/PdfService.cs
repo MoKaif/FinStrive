@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
 using System.Linq;
+using api.Helpers;
 
 namespace api.Service
 {
@@ -64,7 +65,7 @@ namespace api.Service
                             var parsed = ParseHdfcRow(row);
                             if (parsed != null)
                             {
-                                if (parsed.SourceRef != null && await _transactionRepository.ExistsBySourceRefAsync(parsed.Source, parsed.SourceRef))
+                                if (parsed.SourceRef != null && await _transactionRepository.ExistsByAnySourceRefAsync(TransactionReference.Candidates(parsed.SourceRef)))
                                 {
                                     continue;
                                 }

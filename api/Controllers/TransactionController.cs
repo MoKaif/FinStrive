@@ -21,10 +21,11 @@ namespace api.Controllers
         }
 
         [HttpPost("sync-imap")]
-        public async Task<IActionResult> SyncImap()
+        [HttpPost("sync-email-transactions")]
+        public async Task<IActionResult> SyncImap([FromQuery] int? lookbackDays = null)
         {
-            await _imapService.CheckEmailsAsync();
-            return Ok("Sync initiated check logs.");
+            var result = await _imapService.CheckEmailsAsync(lookbackDays);
+            return Ok(result);
         }
 
         [HttpGet]
