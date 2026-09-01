@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   lookback-aware API endpoint for scheduled clients such as Orion Treasurer.
 
 ### Changed
+- 2026-09-01: The Swagger document now identifies the service as FinStrive API.
 - Transaction references are normalised across statement and email imports so
   left-zero-padded UPI references resolve to the same transaction.
 ### Changed
