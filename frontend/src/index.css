@@ -7,6 +7,16 @@
 @layer base {
   body {
     @apply bg-term-ink text-term-text font-sans antialiased overflow-x-hidden;
+    min-width: 320px;
+    background-image: radial-gradient(circle at 50% -20%, rgba(245, 158, 11, 0.05), transparent 35rem);
+  }
+
+  ::selection {
+    @apply bg-term-accent text-term-ink;
+  }
+
+  button, a, input, select, textarea {
+    -webkit-tap-highlight-color: transparent;
   }
 
   h1,

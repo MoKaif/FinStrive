@@ -22,17 +22,20 @@ namespace api.Service
         private readonly ITransactionRepository _transactionRepository;
         private readonly HdfcTransactionEmailParser _parser;
         private readonly ILogger<ImapService> _logger;
+        private readonly ITransactionCategorizationService _categorizer;
 
         public ImapService(
             IConfiguration config,
             ITransactionRepository transactionRepository,
             HdfcTransactionEmailParser parser,
-            ILogger<ImapService> logger)
+            ILogger<ImapService> logger,
+            ITransactionCategorizationService categorizer)
         {
             _config = config;
             _transactionRepository = transactionRepository;
             _parser = parser;
             _logger = logger;
+            _categorizer = categorizer;
         }
 
         public async Task<EmailTransactionSyncResult> CheckEmailsAsync(int? lookbackDays = null)
@@ -84,6 +87,7 @@ namespace api.Service
                         continue;
                     }
 
+                    await _categorizer.ApplySuggestionAsync(transaction);
                     await _transactionRepository.CreateAsync(transaction);
                     result.Created++;
                 }

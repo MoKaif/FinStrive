@@ -16,10 +16,12 @@ namespace api.Service
     public class PdfService : IPdfService
     {
         private readonly ITransactionRepository _transactionRepository;
+        private readonly ITransactionCategorizationService _categorizer;
 
-        public PdfService(ITransactionRepository transactionRepository)
+        public PdfService(ITransactionRepository transactionRepository, ITransactionCategorizationService categorizer)
         {
             _transactionRepository = transactionRepository;
+            _categorizer = categorizer;
         }
 
         public async Task<List<Transaction>> ImportPdfAsync(IFormFile file, string? password = null)
@@ -36,13 +38,6 @@ namespace api.Service
         public async Task<List<Transaction>> ImportPdfAsync(Stream stream, string? password = null)
         {
             var importedTransactions = new List<Transaction>();
-            var history = await _transactionRepository.GetByMappedStatusAsync(true);
-
-            // simple learning: exact match on clean description
-            var knowledgeBase = history
-                .Where(t => !string.IsNullOrEmpty(t.DescriptionClean))
-                .GroupBy(t => t.DescriptionClean!)
-                .ToDictionary(g => g.Key, g => g.First());
 
             using (var memoryStream = new MemoryStream())
             {
@@ -70,14 +65,7 @@ namespace api.Service
                                     continue;
                                 }
 
-                                // RULE BASED LEARNER APPLICATION
-                                if (!string.IsNullOrEmpty(parsed.DescriptionClean) && knowledgeBase.TryGetValue(parsed.DescriptionClean, out var known))
-                                {
-                                    parsed.Category = known.Category;
-                                    parsed.AccountFrom = known.AccountFrom;
-                                    parsed.AccountTo = known.AccountTo;
-                                    // We leave Mapped = false so user reviews it, but it's pre-filled.
-                                }
+                                await _categorizer.ApplySuggestionAsync(parsed);
 
                                 await _transactionRepository.CreateAsync(parsed);
                                 importedTransactions.Add(parsed);

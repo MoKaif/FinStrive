@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import "./Navbar.css";
 import { useAuth } from "../../Context/useAuth";
+import { BrandLockup } from "../Brand/BrandMark";
 
 interface Props {}
 
@@ -24,17 +26,21 @@ const tab = ({ isActive }: { isActive: boolean }) =>
 
 const Navbar = (props: Props) => {
   const { isLoggedIn, user, logout } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => setMenuOpen(false), [location.pathname]);
 
   return (
-    <nav className="fixed z-50 w-full border-b border-term-rule bg-term-ink/95 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-[88rem] items-stretch justify-between gap-8 px-4 sm:px-8">
+    <nav className="fixed inset-x-0 top-0 z-50 border-b border-term-rule bg-term-ink/95 backdrop-blur-md" aria-label="Primary navigation">
+      <div className="mx-auto flex h-16 max-w-[88rem] items-stretch justify-between gap-4 px-4 sm:px-8">
         <div className="flex items-stretch gap-10">
           <Link
             to="/"
-            className="term-focus flex items-center gap-2 py-3 text-[15px] font-semibold tracking-tight text-term-text"
+            className="term-focus flex items-center py-2"
           >
-            FinStrive
-            <span className="term-label text-term-accent">v1.3</span>
+            <BrandLockup compact />
+            <span className="term-label ml-2 hidden text-term-accent sm:inline">v1.3</span>
           </Link>
 
           {isLoggedIn() && (
@@ -48,12 +54,27 @@ const Navbar = (props: Props) => {
           )}
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {isLoggedIn() ? (
             <>
               <span className="term-label hidden lg:inline">{user?.userName}</span>
-              <button onClick={logout} className="term-btn py-1.5">
+              <button onClick={logout} className="term-btn hidden py-1.5 sm:inline-flex">
                 Sign out
+              </button>
+              <button
+                type="button"
+                onClick={() => setMenuOpen((open) => !open)}
+                className="term-focus inline-flex h-10 w-10 items-center justify-center border border-term-rule text-term-muted lg:hidden"
+                aria-expanded={menuOpen}
+                aria-controls="mobile-navigation"
+                aria-label={menuOpen ? "Close navigation" : "Open navigation"}
+              >
+                <span className="sr-only">Menu</span>
+                <span aria-hidden className="space-y-1">
+                  <span className="block h-px w-4 bg-current" />
+                  <span className="block h-px w-4 bg-current" />
+                  <span className="block h-px w-4 bg-current" />
+                </span>
               </button>
             </>
           ) : (
@@ -68,6 +89,24 @@ const Navbar = (props: Props) => {
           )}
         </div>
       </div>
+      {isLoggedIn() && menuOpen && (
+        <div id="mobile-navigation" className="border-t border-term-rule bg-term-panel px-4 py-3 lg:hidden">
+          <div className="mx-auto grid max-w-[88rem] gap-px bg-term-rule sm:grid-cols-2">
+            {links.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                className={({ isActive }) => `term-focus bg-term-panel px-3 py-3 text-[12px] ${isActive ? "border-l-2 border-term-accent text-term-text" : "text-term-muted"}`}
+              >
+                {link.label}
+              </NavLink>
+            ))}
+            <button onClick={logout} className="term-focus bg-term-panel px-3 py-3 text-left text-[12px] text-term-loss sm:hidden">
+              Sign out · {user?.userName}
+            </button>
+          </div>
+        </div>
+      )}
     </nav>
   );
 };

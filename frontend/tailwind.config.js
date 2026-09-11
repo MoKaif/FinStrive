@@ -28,20 +28,19 @@ module.exports = {
           secondary: "#94a3b8", // Slate 400
           muted: "#64748b", // Slate 500
         },
-        // Holdings terminal. A colder, flatter ground than the indigo/glass
-        // system above, so dense financial tables read as a statement rather
-        // than as stacked dashboard cards.
+        // FinStrive brand kit. Keep these canonical values aligned with the
+        // reference board and use the additional shades only for hierarchy.
         term: {
-          ink: "#05070A",    // page
-          panel: "#0C1015",  // block surface
-          raised: "#11161D", // hover / header rows
-          rule: "#1C232B",   // hairlines
-          text: "#E6E9EC",
-          muted: "#7E8994",  // 5.4:1 on panel
-          dim: "#67727E",    // supplementary labels only
-          accent: "#E8A33D", // structural: active state, statement date
-          gain: "#46C68C",
-          loss: "#E8635F",
+          ink: "#0B0B0C",    // canonical background
+          panel: "#151517",  // intermediate surface
+          raised: "#1F1F23", // canonical surface / hover
+          rule: "#303036",   // hairlines
+          text: "#E5E7EB",   // canonical text
+          muted: "#9CA3AF",
+          dim: "#737B89",
+          accent: "#F59E0B", // canonical primary
+          gain: "#10B981",   // canonical positive
+          loss: "#EF4444",   // canonical negative
           // Categorical slots for asset classes. Validated as a set against
           // the panel surface for lightness, chroma, CVD separation and
           // contrast; do not re-order or substitute individually.

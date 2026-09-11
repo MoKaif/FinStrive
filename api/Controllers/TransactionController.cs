@@ -12,12 +12,21 @@ namespace api.Controllers
         private readonly ITransactionRepository _repo;
         private readonly ILedgerWriterService _ledgerWriter;
         private readonly IImapService _imapService;
+        private readonly ITransactionCategorizationService _categorizer;
 
-        public TransactionController(ITransactionRepository repo, ILedgerWriterService ledgerWriter, IImapService imapService)
+        public TransactionController(ITransactionRepository repo, ILedgerWriterService ledgerWriter, IImapService imapService, ITransactionCategorizationService categorizer)
         {
             _repo = repo;
             _ledgerWriter = ledgerWriter;
             _imapService = imapService;
+            _categorizer = categorizer;
+        }
+
+        [HttpPost("recommendations/apply-pending")]
+        public async Task<IActionResult> ApplyPendingRecommendations()
+        {
+            var updated = await _categorizer.ApplySuggestionsToPendingAsync();
+            return Ok(new { updated });
         }
 
         [HttpPost("sync-imap")]

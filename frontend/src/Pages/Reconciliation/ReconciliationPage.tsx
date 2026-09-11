@@ -26,6 +26,11 @@ type TransactionEditForm = {
     amount?: string;
 };
 
+const defaultCategories = [
+    "Bills & Utilities", "Food & Dining", "Groceries", "Health", "Insurance",
+    "Interest", "Investment", "Refund", "Salary", "Shopping", "Subscriptions", "Transport"
+];
+
 const ReconciliationPage = () => {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -40,6 +45,13 @@ const ReconciliationPage = () => {
     useEffect(() => {
         const initData = async () => {
             setIsLoading(true);
+            try {
+                // Backfill rows imported before the shared categorizer was enabled.
+                await axios.post("/api/transactions/recommendations/apply-pending");
+            } catch (error) {
+                // Reconciliation remains usable even if recommendation backfill fails.
+                console.error("Failed to apply category recommendations", error);
+            }
             await Promise.all([
                 fetchUnmappedTransactions(),
                 fetchSuggestions()
@@ -65,7 +77,10 @@ const ReconciliationPage = () => {
             const data = res.data;
 
             // Extract unique values
-            const categories = Array.from(new Set(data.map(t => t.category).filter(Boolean) as string[])).sort();
+            const categories = Array.from(new Set([
+                ...defaultCategories,
+                ...(data.map(t => t.category).filter(Boolean) as string[])
+            ])).sort();
             const accounts = Array.from(new Set([
                 ...data.map(t => t.accountFrom),
                 ...data.map(t => t.accountTo)
@@ -111,6 +126,14 @@ const ReconciliationPage = () => {
             accountTo: clean(txn.accountTo),
             amount: txn.amount.toString(),
         } as any);
+    };
+
+    const updateCategory = (category: string) => {
+        const currentAccount = editForm.accountTo || "";
+        const accountTo = !currentAccount || currentAccount === "Expenses:Uncategorized" || currentAccount.startsWith("Expenses:")
+            ? (category ? `Expenses:${category}` : "")
+            : currentAccount;
+        setEditForm({ ...editForm, category, accountTo });
     };
 
     const handleSkip = async (txn: Transaction) => {
@@ -245,7 +268,7 @@ const ReconciliationPage = () => {
                                                     className="term-input py-1.5 text-[12px]"
                                                     placeholder="Food, Transport…"
                                                     value={editForm.category || ""}
-                                                    onChange={val => setEditForm({ ...editForm, category: val })}
+                                                    onChange={updateCategory}
                                                     suggestions={categorySuggestions}
                                                 />
                                             </label>
@@ -290,12 +313,17 @@ const ReconciliationPage = () => {
                                             ].map(([label, value]) => (
                                                 <div key={label as string}>
                                                     <dt className="term-label">{label}</dt>
-                                                    <dd className={`mt-1 truncate text-[12px] ${value ? "text-term-text" : "text-term-dim"}`}>
+                                                    <dd className={`mt-1 truncate text-[12px] ${value ? "text-term-text" : "text-term-dim"}`} title={value || undefined}>
                                                         {value || "—"}
                                                     </dd>
                                                 </div>
                                             ))}
                                         </dl>
+                                        {txn.category && !txn.mapped && (
+                                            <span className="term-label border border-term-accent/40 px-2 py-1 text-term-accent">
+                                                Suggested · review
+                                            </span>
+                                        )}
                                         <div className="flex items-center gap-3">
                                             <button onClick={() => handleSkip(txn)} className="term-btn">
                                                 Skip

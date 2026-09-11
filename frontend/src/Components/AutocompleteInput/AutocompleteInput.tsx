@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useId, useRef } from "react";
 
 interface Props {
     value: string;
@@ -11,18 +11,23 @@ interface Props {
 const AutocompleteInput = ({ value, onChange, suggestions, placeholder, className }: Props) => {
     const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [activeIndex, setActiveIndex] = useState(0);
     const wrapperRef = useRef<HTMLDivElement>(null);
+    const listId = useId();
 
     useEffect(() => {
         // Filter suggestions based on input value
-        if (value) {
+        if (value.trim()) {
+            const query = value.trim().toLowerCase();
             const filtered = suggestions.filter((item) =>
-                item.toLowerCase().includes(value.toLowerCase())
-            );
+                item.toLowerCase().includes(query)
+            ).slice(0, 8);
             setFilteredSuggestions(filtered);
         } else {
-            setFilteredSuggestions([]);
+            // Opening an empty field should still be useful on a fresh mapping.
+            setFilteredSuggestions(suggestions.slice(0, 8));
         }
+        setActiveIndex(0);
     }, [value, suggestions]);
 
     useEffect(() => {
@@ -58,19 +63,37 @@ const AutocompleteInput = ({ value, onChange, suggestions, placeholder, classNam
                 onChange={handleChange}
                 onFocus={() => setShowSuggestions(true)}
                 onKeyDown={(e) => {
-                    if (e.key === 'Tab' && showSuggestions && filteredSuggestions.length > 0) {
+                    if (e.key === 'ArrowDown' && filteredSuggestions.length > 0) {
                         e.preventDefault();
-                        handleSelect(filteredSuggestions[0]);
+                        setShowSuggestions(true);
+                        setActiveIndex(index => (index + 1) % filteredSuggestions.length);
                     }
+                    if (e.key === 'ArrowUp' && filteredSuggestions.length > 0) {
+                        e.preventDefault();
+                        setShowSuggestions(true);
+                        setActiveIndex(index => (index - 1 + filteredSuggestions.length) % filteredSuggestions.length);
+                    }
+                    if ((e.key === 'Enter' || e.key === 'Tab') && showSuggestions && filteredSuggestions.length > 0) {
+                        e.preventDefault();
+                        handleSelect(filteredSuggestions[activeIndex]);
+                    }
+                    if (e.key === 'Escape') setShowSuggestions(false);
                 }}
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded={showSuggestions && filteredSuggestions.length > 0}
+                aria-controls={listId}
             />
             {showSuggestions && filteredSuggestions.length > 0 && (
-                <ul className="term-panel absolute z-50 mt-1 max-h-60 w-full overflow-y-auto shadow-lg">
+                <ul id={listId} className="term-panel absolute z-50 mt-1 max-h-60 w-full overflow-y-auto shadow-lg">
                     {filteredSuggestions.map((suggestion, index) => (
                         <li
-                            key={index}
+                            key={suggestion}
+                            onMouseDown={(event) => event.preventDefault()}
                             onClick={() => handleSelect(suggestion)}
-                            className="cursor-pointer px-3 py-1.5 text-[12px] text-term-muted transition-colors hover:bg-term-raised hover:text-term-text"
+                            className={`cursor-pointer px-3 py-2 text-[12px] transition-colors ${index === activeIndex ? "bg-term-raised text-term-text" : "text-term-muted hover:bg-term-raised hover:text-term-text"}`}
+                            role="option"
+                            aria-selected={index === activeIndex}
                         >
                             {suggestion}
                         </li>
