@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Email and statement imports now share reference-based duplicate detection,
   preventing scheduled mailbox scans from recreating transactions already read
   from a statement or an earlier alert.
+- 2026-10-03: Company pages now show a clear not-found state when a profile is
+  absent or cannot be loaded instead of displaying a spinner indefinitely.
 - 2026-08-17: Unauthorized frontend responses now show the login prompt and
   navigate to the login page instead of displaying the raw response body.
 - Value Research's renamed `Mutual Funds / SIFs` section is recognised in both
