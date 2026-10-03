@@ -13,18 +13,47 @@ const CompanyPage = (props: Props) => {
   let { ticker } = useParams();
 
   const [company, setCompany] = useState<CompanyProfile>();
+  const [isLoading, setIsLoading] = useState(true);
+  const [profileUnavailable, setProfileUnavailable] = useState(false);
 
   useEffect(() => {
+    let isCurrent = true;
+
     const getProfileInit = async () => {
-      const result = await getCompanyProfile(ticker!);
-      setCompany(result?.data[0]);
+      setIsLoading(true);
+      setProfileUnavailable(false);
+
+      try {
+        const result = await getCompanyProfile(ticker!);
+        const profile = result?.data[0];
+
+        if (isCurrent) {
+          setCompany(profile);
+          setProfileUnavailable(!profile);
+        }
+      } catch {
+        if (isCurrent) {
+          setCompany(undefined);
+          setProfileUnavailable(true);
+        }
+      } finally {
+        if (isCurrent) {
+          setIsLoading(false);
+        }
+      }
     };
     getProfileInit();
-  }, []);
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [ticker]);
 
   return (
     <>
-      {company ? (
+      {isLoading ? (
+        <Spinner />
+      ) : company ? (
         <div className="relative flex w-full overflow-x-hidden">
           <Sidebar />
           <CompanyDashboard ticker={ticker!}>
@@ -37,9 +66,16 @@ const CompanyPage = (props: Props) => {
             </p>
           </CompanyDashboard>
         </div>
-      ) : (
-        <Spinner />
-      )}
+      ) : profileUnavailable ? (
+        <div className="min-h-screen bg-term-ink px-4 pb-16 pt-24 text-term-text sm:px-8">
+          <section className="term-panel mx-auto max-w-lg px-8 py-16 text-center">
+            <h1 className="font-display text-[20px] font-semibold text-term-text">Company not found</h1>
+            <p className="mx-auto mt-3 max-w-md text-[13px] leading-relaxed text-term-muted">
+              No company profile is available for {ticker}.
+            </p>
+          </section>
+        </div>
+      ) : null}
     </>
   );
 };
